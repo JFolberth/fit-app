@@ -1,0 +1,36 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "functionAppName": {
+      "value": "fitapp-dev-func"
+    },
+    "appServicePlanName": {
+      "value": "fitapp-dev-plan"
+    },
+    "appInsightsName": {
+      "value": "fitapp-dev-backend-appi"
+    },
+    "location": {
+      "value": "eastus2"
+    },
+    "cosmosEndpoint": {
+      "value": "https://fitapp-dev-cosmos.documents.azure.com:443/"
+    },
+    "cosmosDatabaseName": {
+      "value": "fitappdb"
+    },
+    "cosmosActivitiesContainerName": {
+      "value": "activities"
+    },
+    "logAnalyticsWorkspaceId": {
+      "value": "/subscriptions/35ce8cef-94f9-4dba-9c61-a09396fec7cf/resourceGroups/rg-fitapp-dev-monitoring/providers/Microsoft.OperationalInsights/workspaces/fitapp-dev-law"
+    },
+    "tags": {
+      "value": {
+        "environment": "dev",
+        "project": "fitapp"
+      }
+    }
+  }
+}

@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Log Activity</title>
+  <link rel="stylesheet" href="../components/styles.css" />
+</head>
+<body>
+  <main>
+    <h1>Log Activity</h1>
+    <div id="notices"></div>
+    <form id="activity-form">
+      <label>Type
+        <select name="type" required>
+          <option>Running</option>
+          <option>Rowing</option>
+          <option>Rucking</option>
+        </select>
+      </label>
+      <label>Duration (minutes)
+        <input type="number" step="0.1" name="duration" required />
+      </label>
+      <label>Distance (miles)
+        <input type="number" step="0.1" name="distance" />
+      </label>
+      <label>Avg BPM
+        <input type="number" name="avgBpm" min="20" max="240" required />
+      </label>
+      <label>Date
+        <input type="date" name="date" />
+      </label>
+      <label>Comments
+        <textarea name="comments"></textarea>
+      </label>
+      <button type="submit">Save</button>
+    </form>
+  </main>
+  <script type="module">
+    import { createActivity } from '../services/api.js';
+    import { Notification } from '../components/Notification.js';
+    const notices = new Notification(document.getElementById('notices'));
+
+    const form = document.getElementById('activity-form');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fd = new FormData(form);
+      const payload = Object.fromEntries(fd.entries());
+      // Coerce numbers
+      if (payload.duration) payload.duration = parseFloat(payload.duration);
+      if (payload.distance) payload.distance = parseFloat(payload.distance);
+      if (payload.avgBpm) payload.avgBpm = parseInt(payload.avgBpm, 10);
+      try {
+        await createActivity(payload);
+        notices.show('success', 'Activity saved');
+        form.reset();
+      } catch (err) {
+        notices.show('error', err.message || 'Failed to save');
+      }
+    });
+  </script>
+</body>
+</html>

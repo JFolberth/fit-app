@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Activity History</title>
+  <link rel="stylesheet" href="../components/styles.css" />
+  <style>
+    ul.activities { list-style: none; padding: 0; }
+    ul.activities li { padding: 8px; border-bottom: 1px solid #eee; }
+    .meta { font-size: 0.85rem; color: #555; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Activity History</h1>
+    <div id="notices"></div>
+    <div id="filter"></div>
+    <ul id="list" class="activities"></ul>
+  </main>
+  <script type="module">
+    import { listActivities } from '../services/api.js';
+    import { Notification } from '../components/Notification.js';
+    import { TypeFilter } from '../components/TypeFilter.js';
+
+    const notices = new Notification(document.getElementById('notices'));
+    const filter = new TypeFilter(document.getElementById('filter'));
+    const list = document.getElementById('list');
+
+    async function load(type) {
+      try {
+        const items = await listActivities(type, 50);
+        list.innerHTML = '';
+        for (const i of items) {
+          const li = document.createElement('li');
+          const distText = i.distance != null ? `${i.distance} mi` : 'n/a';
+          const bpmText = i.avgBpm != null ? `${i.avgBpm} bpm` : 'n/a';
+          li.innerHTML = `
+            <strong>${i.type}</strong> — ${i.duration} min, ${distText}
+            <div class="meta">${i.date} • ${bpmText}</div>
+          `;
+          list.appendChild(li);
+        }
+      } catch (err) {
+        notices.show('error', err.message || 'Failed to load');
+      }
+    }
+
+    document.getElementById('filter').addEventListener('filterchange', (e) => {
+      load(e.detail.type);
+    });
+
+    load(null);
+  </script>
+</body>
+</html>
