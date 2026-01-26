@@ -6,9 +6,9 @@ export default defineConfig({
   retries: 0,
   use: {
     baseURL: process.env.SWA_BASE_URL || 'http://localhost:4280',
-    trace: 'on-first-retry',
-    video: 'retain-on-failure',
-    screenshot: 'only-on-failure'
+    trace: 'off',
+    video: 'off',
+    screenshot: 'off'
   },
   projects: [
     {
