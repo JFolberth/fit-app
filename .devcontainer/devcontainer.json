@@ -1,0 +1,50 @@
+{
+  "name": "fit-app devcontainer",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "lts"
+    },
+    "ghcr.io/devcontainers/features/azure-cli:1": {
+      "installBicep": true,
+      "version": "latest"
+    },
+    "ghcr.io/azure/azure-dev/azd:latest": {}
+  },
+  "postCreateCommand": "pip install -r backend/requirements.txt && npm install -g @azure/static-web-apps-cli azure-functions-core-tools@4 --unsafe-perm true",
+  "postStartCommand": "cd frontend/tests/functional && npm install 2>/dev/null || true",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-azuretools.azurefunctions",
+        "ms-azuretools.vscode-azurestaticwebapps",
+        "ms-playwright.playwright",
+        "ms-vscode.azurecli",
+        "github.vscode-codeql",
+        "ms-azuretools.vscode-azure-github-copilot",
+        "github.copilot",
+        "ms-azuretools.vscode-applicationinsights"
+      ],
+      "settings": {
+        "github.copilot.advanced": {
+          "debug.overrideChatEngine": "gpt-4o",
+          "debug.overrideProxyUrl": "https://api.githubcopilot.com"
+        },
+        "github.copilot.enable": {
+          "*": true,
+          "yaml": true,
+          "plaintext": false,
+          "markdown": true,
+          "python": true,
+          "javascript": true,
+          "typescript": true,
+          "bicep": true
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Activity History | FitApp</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../components/styles.css" />
+  <script>
+    window.FITAPP_API_URL = "https://fitapp-dev-func.azurewebsites.net/api";
+  </script>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <a href="../index.html" class="navbar-brand">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 8h1a4 4 0 0 1 0 8h-1"></path>
+          <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path>
+          <line x1="6" y1="1" x2="6" y2="4"></line>
+          <line x1="10" y1="1" x2="10" y2="4"></line>
+          <line x1="14" y1="1" x2="14" y2="4"></line>
+        </svg>
+        FitApp
+      </a>
+      <div class="navbar-links">
+        <a href="log-activity.html" class="nav-link">Log Activity</a>
+        <a href="history.html" class="nav-link active">History</a>
+      </div>
+    </div>
+  </nav>
+
+  <main>
+    <header class="page-header">
+      <h1 class="page-title">Activity History</h1>
+      <p class="page-subtitle">Review your past workouts and track your progress</p>
+    </header>
+
+    <div id="notices"></div>
+
+    <div id="filter" class="filter-bar"></div>
+
+    <div id="loading" class="loading" style="display: none;">
+      <div class="spinner"></div>
+    </div>
+
+    <ul id="list" class="activity-list"></ul>
+
+    <div id="empty" class="empty-state" style="display: none;">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="8" x2="12" y2="12"></line>
+        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+      </svg>
+      <p>No activities found. Start by logging your first workout!</p>
+    </div>
+  </main>
+
+  <script type="module">
+    import { listActivities } from '../services/api.js';
+    import { Notification } from '../components/Notification.js';
+    import { TypeFilter } from '../components/TypeFilter.js';
+
+    const notices = new Notification(document.getElementById('notices'));
+    const filter = new TypeFilter(document.getElementById('filter'));
+    const list = document.getElementById('list');
+    const loading = document.getElementById('loading');
+    const empty = document.getElementById('empty');
+
+    const typeIcons = {
+      Running: '🏃',
+      Rowing: '🚣',
+      Rucking: '🎒'
+    };
+
+    function formatDate(dateStr) {
+      const date = new Date(dateStr + 'T00:00:00');
+      return date.toLocaleDateString('en-US', { 
+        weekday: 'short', 
+        month: 'short', 
+        day: 'numeric' 
+      });
+    }
+
+    async function load(type) {
+      loading.style.display = 'flex';
+      list.innerHTML = '';
+      empty.style.display = 'none';
+      
+      try {
+        const items = await listActivities(type, 50);
+        loading.style.display = 'none';
+        
+        if (items.length === 0) {
+          empty.style.display = 'block';
+          return;
+        }
+
+        for (const i of items) {
+          const li = document.createElement('li');
+          li.className = 'activity-item';
+          
+          const icon = typeIcons[i.type] || '🏋️';
+          const typeClass = i.type.toLowerCase();
+          const distText = i.distance != null ? `${i.distance}` : '—';
+          const bpmText = i.avgBpm != null ? `${i.avgBpm}` : '—';
+          
+          li.innerHTML = `
+            <div class="activity-header">
+              <span class="activity-type">
+                <span class="activity-type-badge ${typeClass}">${icon}</span>
+                ${i.type}
+              </span>
+              <span class="activity-date">${formatDate(i.date)}</span>
+            </div>
+            <div class="activity-stats">
+              <div class="activity-stat">
+                <span class="activity-stat-value">${i.duration}</span>
+                <span class="activity-stat-label">Minutes</span>
+              </div>
+              <div class="activity-stat">
+                <span class="activity-stat-value">${distText}</span>
+                <span class="activity-stat-label">Miles</span>
+              </div>
+              <div class="activity-stat">
+                <span class="activity-stat-value">${bpmText}</span>
+                <span class="activity-stat-label">Avg BPM</span>
+              </div>
+            </div>
+          `;
+          list.appendChild(li);
+        }
+      } catch (err) {
+        loading.style.display = 'none';
+        notices.show('error', err.message || 'Failed to load activities');
+      }
+    }
+
+    document.getElementById('filter').addEventListener('filterchange', (e) => {
+      load(e.detail.type);
+    });
+
+    load(null);
+  </script>
+</body>
+</html>

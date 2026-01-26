@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Log Activity | FitApp</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../components/styles.css" />
+  <script>
+    window.FITAPP_API_URL = "https://fitapp-dev-func.azurewebsites.net/api";
+  </script>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <a href="../index.html" class="navbar-brand">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 8h1a4 4 0 0 1 0 8h-1"></path>
+          <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path>
+          <line x1="6" y1="1" x2="6" y2="4"></line>
+          <line x1="10" y1="1" x2="10" y2="4"></line>
+          <line x1="14" y1="1" x2="14" y2="4"></line>
+        </svg>
+        FitApp
+      </a>
+      <div class="navbar-links">
+        <a href="log-activity.html" class="nav-link active">Log Activity</a>
+        <a href="history.html" class="nav-link">History</a>
+      </div>
+    </div>
+  </nav>
+
+  <main>
+    <header class="page-header">
+      <h1 class="page-title">Log Activity</h1>
+      <p class="page-subtitle">Track your workout and keep the momentum going</p>
+    </header>
+
+    <div id="notices"></div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+        </div>
+        <h2 class="card-title">New Activity</h2>
+      </div>
+
+      <form id="activity-form" class="form-grid">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="type">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+              </svg>
+              Activity Type
+            </label>
+            <select name="type" id="type" class="form-select" required>
+              <option value="Running">🏃 Running</option>
+              <option value="Rowing">🚣 Rowing</option>
+              <option value="Rucking">🎒 Rucking</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="date">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+              </svg>
+              Date
+            </label>
+            <input type="date" name="date" id="date" class="form-input" />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="duration">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
+              Duration (minutes)
+            </label>
+            <input type="number" step="0.1" name="duration" id="duration" class="form-input" placeholder="e.g. 30" required />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="distance">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+              Distance (miles)
+            </label>
+            <input type="number" step="0.1" name="distance" id="distance" class="form-input" placeholder="Optional" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="avgBpm">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+            </svg>
+            Average Heart Rate (BPM)
+          </label>
+          <input type="number" name="avgBpm" id="avgBpm" class="form-input" min="20" max="240" placeholder="e.g. 145" required />
+        </div>
+
+        <div class="form-group full-width">
+          <label class="form-label" for="comments">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </svg>
+            Notes
+          </label>
+          <textarea name="comments" id="comments" class="form-textarea" placeholder="How did it feel? Any observations..."></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-lg btn-block mt-lg">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+            <polyline points="17 21 17 13 7 13 7 21"></polyline>
+            <polyline points="7 3 7 8 15 8"></polyline>
+          </svg>
+          Save Activity
+        </button>
+      </form>
+    </div>
+  </main>
+
+  <script type="module">
+    import { createActivity } from '../services/api.js';
+    import { Notification } from '../components/Notification.js';
+    const notices = new Notification(document.getElementById('notices'));
+
+    // Set default date to today
+    document.getElementById('date').valueAsDate = new Date();
+
+    const form = document.getElementById('activity-form');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fd = new FormData(form);
+      const payload = Object.fromEntries(fd.entries());
+      // Coerce numbers
+      if (payload.duration) payload.duration = parseFloat(payload.duration);
+      if (payload.distance) payload.distance = parseFloat(payload.distance);
+      if (payload.avgBpm) payload.avgBpm = parseInt(payload.avgBpm, 10);
+      try {
+        await createActivity(payload);
+        // Store success message and redirect to homepage
+        sessionStorage.setItem('fitapp_toast', JSON.stringify({ type: 'success', message: 'Activity saved successfully!' }));
+        window.location.href = '../index.html';
+      } catch (err) {
+        notices.show('error', `Failed to save. ${err.message}`);
+      }
+    });
+  </script>
+</body>
+</html>

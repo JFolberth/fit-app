@@ -1,0 +1,8 @@
+azure-functions
+azure-identity
+azure-cosmos
+pydantic
+pytest
+pytest-cov
+bandit
+pip-audit

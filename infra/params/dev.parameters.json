@@ -1,0 +1,55 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "env": {
+      "value": "dev"
+    },
+    "location": {
+      "value": "eastus2"
+    },
+    "baseName": {
+      "value": "fitapp"
+    },
+    "tags": {
+      "value": {
+        "app": "fitapp",
+        "env": "dev",
+        "owner": "JFolberth"
+      }
+    },
+    "cosmosAccountName": {
+      "value": "fitapp-dev-cosmos"
+    },
+    "cosmosDatabaseName": {
+      "value": "fitappdb"
+    },
+    "cosmosActivitiesContainerName": {
+      "value": "activities"
+    },
+    "staticWebAppName": {
+      "value": "fitapp-dev-swa"
+    },
+    "appServicePlanName": {
+      "value": "fitapp-dev-plan"
+    },
+    "functionAppName": {
+      "value": "fitapp-dev-func"
+    },
+    "appServicePlanSku": {
+      "value": "FC1"
+    },
+    "logAnalyticsWorkspaceName": {
+      "value": "fitapp-dev-law"
+    },
+    "frontendAppInsightsName": {
+      "value": "fitapp-dev-frontend-appi"
+    },
+    "backendAppInsightsName": {
+      "value": "fitapp-dev-backend-appi"
+    },
+    "zoneRedundant": {
+      "value": false
+    }
+  }
+}

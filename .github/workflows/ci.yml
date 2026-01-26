@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+jobs:
+  backend-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install backend deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+
+      - name: Run unit/integration tests
+        working-directory: backend
+        run: |
+          pytest --maxfail=1 --disable-warnings -q
+
+      - name: Security scan (bandit)
+        run: bandit -r backend -q || true
+
+      - name: Security scan (pip-audit)
+        run: pip-audit || true
+
+  functional-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install Playwright
+        working-directory: frontend/tests/functional
+        run: |
+          npm ci
+          npx playwright install --with-deps
+      - name: Start static server for frontend
+        run: |
+          npx -y serve frontend/src -l 4280 &
+          sleep 5
+      - name: Run functional tests
+        working-directory: frontend/tests/functional
+        env:
+          SWA_BASE_URL: http://localhost:4280
+        run: |
+          npx playwright test
