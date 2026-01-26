@@ -1,5 +1,6 @@
 // infra/modules/backend.bicep
 // Backend resources: App Service Plan + Azure Functions + Application Insights
+// Uses Azure Verified Modules (AVM) with Flex Consumption configuration
 
 @description('Location for resources')
 param location string
@@ -32,16 +33,22 @@ param cosmosDatabaseName string
 param cosmosActivitiesContainerName string
 
 // ============================================================================
-// Storage Account (required for Flex Consumption)
+// Storage Account (required for Azure Functions Flex Consumption)
+// Native resource for direct RBAC scope reference
 // ============================================================================
-module storageAccount 'br/public:avm/res/storage/storage-account:0.15.0' = {
-  name: 'storageAccount-deployment'
-  params: {
-    name: 'st${replace(functionAppName, '-', '')}' // Storage account names must be 3-24 chars, lowercase alphanumeric
-    location: location
-    tags: tags
-    skuName: 'Standard_LRS'
-    kind: 'StorageV2'
+var storageAccountName = take('st${replace(replace(functionAppName, '-', ''), '_', '')}', 24)
+
+resource functionStorageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' = {
+  name: storageAccountName
+  location: location
+  tags: tags
+  sku: {
+    name: 'Standard_LRS'
+  }
+  kind: 'StorageV2'
+  properties: {
+    supportsHttpsTrafficOnly: true
+    minimumTlsVersion: 'TLS1_2'
     allowBlobPublicAccess: false
     publicNetworkAccess: 'Enabled'
     networkAcls: {
@@ -51,10 +58,24 @@ module storageAccount 'br/public:avm/res/storage/storage-account:0.15.0' = {
   }
 }
 
+// Blob container for Function App deployment package
+resource blobServices 'Microsoft.Storage/storageAccounts/blobServices@2023-05-01' = {
+  parent: functionStorageAccount
+  name: 'default'
+}
+
+resource functionContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2023-05-01' = {
+  parent: blobServices
+  name: 'function-container'
+  properties: {
+    publicAccess: 'None'
+  }
+}
+
 // ============================================================================
 // Application Insights for Backend (using AVM)
 // ============================================================================
-module appInsights 'br/public:avm/res/insights/component:0.4.2' = {
+module appInsights 'br/public:avm/res/insights/component:0.7.1' = {
   name: 'backendAppInsights-deployment'
   params: {
     name: appInsightsName
@@ -67,9 +88,9 @@ module appInsights 'br/public:avm/res/insights/component:0.4.2' = {
 }
 
 // ============================================================================
-// App Service Plan (for Azure Functions)
+// App Service Plan (for Azure Functions Flex Consumption)
 // ============================================================================
-module appServicePlan 'br/public:avm/res/web/serverfarm:0.4.0' = {
+module appServicePlan 'br/public:avm/res/web/serverfarm:0.5.0' = {
   name: 'appServicePlan-deployment'
   params: {
     name: appServicePlanName
@@ -91,9 +112,9 @@ module appServicePlan 'br/public:avm/res/web/serverfarm:0.4.0' = {
 }
 
 // ============================================================================
-// Azure Functions App
+// Azure Functions App (Flex Consumption with managed identity)
 // ============================================================================
-module functionApp 'br/public:avm/res/web/site:0.12.0' = {
+module functionApp 'br/public:avm/res/web/site:0.19.4' = {
   name: 'functionApp-deployment'
   params: {
     name: functionAppName
@@ -104,37 +125,55 @@ module functionApp 'br/public:avm/res/web/site:0.12.0' = {
     managedIdentities: {
       systemAssigned: true
     }
-    // Flex Consumption requires functionAppConfig
+    // Flex Consumption configuration with managed identity authentication
     functionAppConfig: {
+      deployment: {
+        storage: {
+          value: '${functionStorageAccount.properties.primaryEndpoints.blob}function-container'
+          type: 'blobContainer'
+          authentication: {
+            type: 'SystemAssignedIdentity'
+          }
+        }
+      }
       runtime: {
         name: 'python'
         version: '3.11'
       }
       scaleAndConcurrency: {
-        maximumInstanceCount: 100
-        instanceMemoryMB: 2048
+        instanceMemoryMB: 512
+        maximumInstanceCount: 40
       }
     }
     siteConfig: {
-      linuxFxVersion: 'Python|3.11'
       ftpsState: 'Disabled'
       minTlsVersion: '1.2'
-      use32BitWorkerProcess: false
-    }
-    appSettingsKeyValuePairs: {
-      FUNCTIONS_WORKER_RUNTIME: 'python'
-      FUNCTIONS_EXTENSION_VERSION: '~4'
-      APPLICATIONINSIGHTS_CONNECTION_STRING: appInsights.outputs.connectionString
-      // Use managed identity for storage (best practice for Flex Consumption)
-      AzureWebJobsStorage__accountName: storageAccount.outputs.name
-      AzureWebJobsStorage__blobServiceUri: storageAccount.outputs.primaryBlobEndpoint
-      AzureWebJobsStorage__queueServiceUri: 'https://${storageAccount.outputs.name}.queue.${environment().suffixes.storage}'
-      AzureWebJobsStorage__tableServiceUri: 'https://${storageAccount.outputs.name}.table.${environment().suffixes.storage}'
-      WEBSITE_CONTENTSHARE: functionAppName
-      COSMOS_ENDPOINT: cosmosEndpoint
-      COSMOS_DATABASE: cosmosDatabaseName
-      COSMOS_ACTIVITIES_CONTAINER: cosmosActivitiesContainerName
-      COSMOS_PARTITION_KEY: 'type'
+      appSettings: [
+        {
+          name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
+          value: appInsights.outputs.connectionString
+        }
+        {
+          name: 'AzureWebJobsStorage__accountName'
+          value: functionStorageAccount.name
+        }
+        {
+          name: 'COSMOS_ENDPOINT'
+          value: cosmosEndpoint
+        }
+        {
+          name: 'COSMOS_DATABASE'
+          value: cosmosDatabaseName
+        }
+        {
+          name: 'COSMOS_ACTIVITIES_CONTAINER'
+          value: cosmosActivitiesContainerName
+        }
+        {
+          name: 'COSMOS_PARTITION_KEY'
+          value: 'type'
+        }
+      ]
     }
     diagnosticSettings: [
       {
@@ -156,34 +195,49 @@ module functionApp 'br/public:avm/res/web/site:0.12.0' = {
 
 // ============================================================================
 // RBAC: Grant Function App access to Storage Account
+// Per MS Learn: Flex Consumption needs Storage Blob Data Owner for deployments
 // ============================================================================
-// Use the AVM authorization module for role assignments
-module storageRoleAssignments 'br/public:avm/ptn/authorization/resource-role-assignment:0.1.1' = {
-  name: 'storage-rbac-assignments'
-  params: {
-    resourceId: storageAccount.outputs.resourceId
-    principalId: functionApp.outputs.systemAssignedMIPrincipalId
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'ba92f5b4-2d11-453d-a403-e96b0029c9fe') // Storage Blob Data Contributor
+
+// Storage Blob Data Owner (required for Flex Consumption deployment storage)
+resource storageBlobOwnerRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(resourceGroup().id, functionAppName, 'storage-blob-owner')
+  scope: functionStorageAccount
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'b7e6dc6d-f1e8-4753-8033-0f276bb0955b')
+    principalId: functionApp.outputs.systemAssignedMIPrincipalId!
     principalType: 'ServicePrincipal'
   }
 }
 
-module storageQueueRoleAssignments 'br/public:avm/ptn/authorization/resource-role-assignment:0.1.1' = {
-  name: 'storage-queue-rbac-assignments'
-  params: {
-    resourceId: storageAccount.outputs.resourceId
-    principalId: functionApp.outputs.systemAssignedMIPrincipalId
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '974c5e8b-45b9-4653-ba55-5f855dd0fb88') // Storage Queue Data Contributor
+// Storage Blob Data Contributor
+resource storageBlobRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(resourceGroup().id, functionAppName, 'storage-blob-contributor')
+  scope: functionStorageAccount
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'ba92f5b4-2d11-453d-a403-e96b0029c9fe')
+    principalId: functionApp.outputs.systemAssignedMIPrincipalId!
     principalType: 'ServicePrincipal'
   }
 }
 
-module storageTableRoleAssignments 'br/public:avm/ptn/authorization/resource-role-assignment:0.1.1' = {
-  name: 'storage-table-rbac-assignments'
-  params: {
-    resourceId: storageAccount.outputs.resourceId
-    principalId: functionApp.outputs.systemAssignedMIPrincipalId
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '0a9a7e1f-b9d0-4cc4-a60d-0319b160aaa3') // Storage Table Data Contributor
+// Storage Queue Data Contributor
+resource storageQueueRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(resourceGroup().id, functionAppName, 'storage-queue-contributor')
+  scope: functionStorageAccount
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '974c5e8b-45b9-4653-ba55-5f855dd0fb88')
+    principalId: functionApp.outputs.systemAssignedMIPrincipalId!
+    principalType: 'ServicePrincipal'
+  }
+}
+
+// Storage Table Data Contributor
+resource storageTableRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(resourceGroup().id, functionAppName, 'storage-table-contributor')
+  scope: functionStorageAccount
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '0a9a7e1f-b9d0-4cc4-a60d-0319b160aaa3')
+    principalId: functionApp.outputs.systemAssignedMIPrincipalId!
     principalType: 'ServicePrincipal'
   }
 }
@@ -198,7 +252,7 @@ output functionAppUrl string = functionApp.outputs.defaultHostname
 output functionAppId string = functionApp.outputs.resourceId
 
 @description('Function App system-assigned managed identity principal ID')
-output functionAppPrincipalId string = functionApp.outputs.systemAssignedMIPrincipalId
+output functionAppPrincipalId string = functionApp.outputs.systemAssignedMIPrincipalId!
 
 @description('Backend Application Insights connection string')
 output appInsightsConnectionString string = appInsights.outputs.connectionString
@@ -207,7 +261,7 @@ output appInsightsConnectionString string = appInsights.outputs.connectionString
 output appInsightsInstrumentationKey string = appInsights.outputs.instrumentationKey
 
 @description('Storage Account resource ID')
-output storageAccountId string = storageAccount.outputs.resourceId
+output storageAccountId string = functionStorageAccount.id
 
 @description('Storage Account name')
-output storageAccountName string = storageAccount.outputs.name
+output storageAccountOutputName string = functionStorageAccount.name

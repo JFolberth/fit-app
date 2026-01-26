@@ -19,6 +19,8 @@ param cosmosActivitiesContainerName string
 @description('Enable zone redundancy')
 param zoneRedundant bool
 
+// Suppressed: Parameter reserved for diagnostic settings (currently commented out due to cross-RG timing issues)
+#disable-next-line no-unused-params
 @description('Log Analytics Workspace resource ID for diagnostics')
 param logAnalyticsWorkspaceId string
 
@@ -33,6 +35,9 @@ module cosmos 'br/public:avm/res/document-db/database-account:0.11.0' = {
     tags: tags
     disableLocalAuth: true
     minimumTlsVersion: 'Tls12'
+    networkRestrictions: {
+      publicNetworkAccess: 'Enabled'
+    }
     locations: [
       {
         locationName: location

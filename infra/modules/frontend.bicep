@@ -19,7 +19,7 @@ param logAnalyticsWorkspaceId string
 // ============================================================================
 // Application Insights for Frontend (using AVM)
 // ============================================================================
-module appInsights 'br/public:avm/res/insights/component:0.4.2' = {
+module appInsights 'br/public:avm/res/insights/component:0.7.1' = {
   name: 'frontendAppInsights-deployment'
   params: {
     name: appInsightsName
@@ -34,7 +34,7 @@ module appInsights 'br/public:avm/res/insights/component:0.4.2' = {
 // ============================================================================
 // Static Web App
 // ============================================================================
-module staticWebApp 'br/public:avm/res/web/static-site:0.5.0' = {
+module staticWebApp 'br/public:avm/res/web/static-site:0.9.3' = {
   name: 'staticWebApp-deployment'
   params: {
     name: staticWebAppName
