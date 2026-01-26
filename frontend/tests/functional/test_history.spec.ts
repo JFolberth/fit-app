@@ -27,9 +27,9 @@ test('history page loads and filters by type', async ({ page }) => {
   await mockApi(page);
   await page.goto('/pages/history.html');
   // Initially shows 2 items
-  await expect(page.locator('ul.activities li')).toHaveCount(2);
+  await expect(page.locator('ul.activity-list li')).toHaveCount(2);
   // Filter to Running -> 1 item
   await page.selectOption('#filter select', 'Running');
-  await expect(page.locator('ul.activities li')).toHaveCount(1);
-  await expect(page.locator('ul.activities li').first()).toContainText('Running');
+  await expect(page.locator('ul.activity-list li')).toHaveCount(1);
+  await expect(page.locator('ul.activity-list li').first()).toContainText('Running');
 });
