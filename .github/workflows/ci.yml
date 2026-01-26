@@ -27,6 +27,12 @@ jobs:
         run: |
           pytest --maxfail=1 --disable-warnings -q
 
+      - name: Security scan (bandit)
+        run: bandit -r backend -q || true
+
+      - name: Security scan (pip-audit)
+        run: pip-audit || true
+
   functional-tests:
     runs-on: ubuntu-latest
     steps:
