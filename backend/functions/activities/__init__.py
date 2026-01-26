@@ -58,6 +58,7 @@ def _query_item_by_id(container, item_id: str) -> Optional[Dict[str, Any]]:
 def _extract_item_id(req: func.HttpRequest) -> Optional[str]:
     route_params = getattr(req, "route_params", {})
     item_id = route_params.get("id")
+    logger.info(f"_extract_item_id: route_params={route_params}, item_id={item_id}, url={req.url}")
     if item_id:
         return item_id
     # Fallback for tests: parse from URL path
@@ -66,6 +67,7 @@ def _extract_item_id(req: func.HttpRequest) -> Optional[str]:
         prefix = "/api/activities/"
         if path.startswith(prefix):
             rest = path[len(prefix):]
+            logger.info(f"Extracted from URL path: {rest}")
             return rest or None
     except Exception:
         pass
@@ -90,11 +92,18 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
             if limit_val < 1 or limit_val > 100:
                 return _json_response(400, {"error": "Limit out of range (1-100)"})
 
-            query = "SELECT TOP @limit * FROM c WHERE (@type IS NULL OR c.type = @type) ORDER BY c.date DESC"
-            params = [
-                {"name": "@limit", "value": limit_val},
-                {"name": "@type", "value": type_filter},
-            ]
+            # Build query conditionally - Cosmos DB SQL doesn't support IS NULL with params
+            if type_filter:
+                query = "SELECT TOP @limit * FROM c WHERE c.type = @type ORDER BY c.date DESC"
+                params = [
+                    {"name": "@limit", "value": limit_val},
+                    {"name": "@type", "value": type_filter},
+                ]
+            else:
+                query = "SELECT TOP @limit * FROM c ORDER BY c.date DESC"
+                params = [
+                    {"name": "@limit", "value": limit_val},
+                ]
             items = list(container.query_items(query=query, parameters=params, enable_cross_partition_query=True))
             return _json_response(200, items)
 
@@ -128,19 +137,25 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
             except ValueError:
                 return _json_response(400, {"error": "Invalid JSON"})
 
-            # Merge fields and re-validate as Activity
-            merged = existing.copy()
+            # Strip Cosmos system fields before merging
+            cosmos_fields = {"_rid", "_self", "_etag", "_attachments", "_ts"}
+            merged = {k: v for k, v in existing.items() if k not in cosmos_fields}
             merged.update(payload)
+            logger.info(f"PUT merged data: {merged}")
             try:
                 # Reuse base validation via Activity model
                 updated = Activity(**merged)
             except Exception as e:
+                logger.error(f"Validation error: {e}")
                 return _json_response(400, {"error": str(e)})
-            updated.updatedAt = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
             doc = updated.model_dump()
-            # Partition key required for point operations; ensure field present
-            pk_val = doc.get(PARTITION_KEY_FIELD)
-            container.replace_item(item=item_id, body=doc, partition_key=pk_val)
+            doc["updatedAt"] = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+            logger.info(f"Upserting item {item_id}")
+            try:
+                container.upsert_item(body=doc)
+            except Exception as e:
+                logger.error(f"Cosmos upsert_item error: {e}")
+                raise
             logger.info("Activity updated", extra={"id": item_id})
             return _json_response(200, doc)
 
@@ -158,5 +173,6 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         return _json_response(405, {"error": "Method not allowed"})
 
     except Exception as e:
-        logger.error(f"Unhandled error: {e}")
+        import traceback
+        logger.error(f"Unhandled error: {e}\n{traceback.format_exc()}")
         return _json_response(500, {"error": "Internal server error"})

@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FitApp - Activity Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="components/styles.css" />
+  <script>
+    window.FITAPP_API_URL = "https://fitapp-dev-func.azurewebsites.net/api";
+  </script>
+  <style>
+    .hero {
+      text-align: center;
+      padding: 4rem 1rem;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    .hero-icon {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 1.5rem;
+      background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+    .hero-icon svg {
+      width: 40px;
+      height: 40px;
+    }
+    .hero h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 0.75rem;
+    }
+    .hero p {
+      color: var(--text-secondary);
+      font-size: 1.125rem;
+      margin-bottom: 2.5rem;
+    }
+    .actions {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .actions .btn {
+      padding: 0.875rem 2rem;
+      font-size: 1rem;
+    }
+    .btn-secondary {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+    }
+    .btn-secondary:hover {
+      background: var(--bg-secondary);
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <a href="index.html" class="navbar-brand">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 8h1a4 4 0 0 1 0 8h-1"></path>
+          <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path>
+          <line x1="6" y1="1" x2="6" y2="4"></line>
+          <line x1="10" y1="1" x2="10" y2="4"></line>
+          <line x1="14" y1="1" x2="14" y2="4"></line>
+        </svg>
+        FitApp
+      </a>
+      <div class="navbar-links">
+        <a href="pages/log-activity.html" class="nav-link">Log Activity</a>
+        <a href="pages/history.html" class="nav-link">History</a>
+      </div>
+    </div>
+  </nav>
+
+  <div id="notices"></div>
+
+  <main class="hero">
+    <div class="hero-icon">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M18 8h1a4 4 0 0 1 0 8h-1"></path>
+        <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path>
+        <line x1="6" y1="1" x2="6" y2="4"></line>
+        <line x1="10" y1="1" x2="10" y2="4"></line>
+        <line x1="14" y1="1" x2="14" y2="4"></line>
+      </svg>
+    </div>
+    <h1>FitApp</h1>
+    <p>Track your running, rowing, and rucking activities</p>
+    <div class="actions">
+      <a href="pages/log-activity.html" class="btn btn-primary">Log Activity</a>
+      <a href="pages/history.html" class="btn btn-secondary">View History</a>
+    </div>
+  </main>
+
+  <script type="module">
+    import { Notification } from './components/Notification.js';
+    
+    // Check for toast message from redirect
+    const toastData = sessionStorage.getItem('fitapp_toast');
+    if (toastData) {
+      sessionStorage.removeItem('fitapp_toast');
+      const { type, message } = JSON.parse(toastData);
+      const notices = new Notification(document.getElementById('notices'));
+      notices.show(type, message);
+    }
+  </script>
+</body>
+</html>
