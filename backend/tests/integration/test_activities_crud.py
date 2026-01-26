@@ -24,6 +24,14 @@ class FakeContainer:
     def create_item(self, body):
         self.items.append(body)
         return body
+    def upsert_item(self, body):
+        # Update existing item or insert new one
+        for idx, i in enumerate(self.items):
+            if i.get('id') == body.get('id'):
+                self.items[idx] = body
+                return body
+        self.items.append(body)
+        return body
     def query_items(self, query, parameters=None, enable_cross_partition_query=False):
         if query.startswith("SELECT * FROM c WHERE c.id = @id"):
             p = {x['name']: x['value'] for x in (parameters or [])}
