@@ -90,5 +90,32 @@ The constitution supersedes other practices. Amendments require documentation, a
 - Complexity must be justified; prefer simple, maintainable solutions.
 - Runtime development guidance follows the devcontainer and Azure best practices documented in-repo.
 
-**Version**: 1.0.0 | **Ratified**: 2026-01-21 | **Last Amended**: 2026-01-21
+## Package & Dependency Policy
+
+### Deprecated Package Avoidance
+Do NOT directly depend on these deprecated/unsupported npm packages:
+- `inflight` - Memory leak, unsupported. Use `lru-cache` for async request coalescing.
+- `glob` < v9 - Use `glob@10+` or `fast-glob` instead.
+- `rimraf` < v4 - Use `rimraf@4+` or native `fs.rm` with `{ recursive: true }`.
+- `request` - Deprecated. Use `node-fetch`, `axios`, or native `fetch`.
+- `uuid` < v7 - Use `uuid@9+` or `crypto.randomUUID()`.
+
+### Transitive Dependency Exceptions
+Some Azure tools have transitive dependencies on deprecated packages:
+- `@azure/static-web-apps-cli` → `devcert` → `glob@7`, `rimraf@2`, `inflight` (tracked, awaiting upstream fix)
+
+These are acceptable ONLY as transitive dependencies in dev tools, not in application code.
+
+### Python Package Security
+Pin packages to avoid known vulnerabilities:
+- `pip` ≥ 25.3 (CVE-2025-8869)
+- `wheel` ≥ 0.46.2 (CVE-2026-24049)
+- Run `pip-audit` in CI to catch new vulnerabilities.
+
+### Version Pinning Strategy
+- Lock files are mandatory (`package-lock.json`, `requirements.txt` with pinned versions for prod).
+- Dev dependencies can use caret ranges (`^`) for minor updates.
+- Production dependencies should be more strictly pinned.
+
+**Version**: 1.0.0 | **Ratified**: 2026-01-21 | **Last Amended**: 2026-01-26
 <!-- Keep versioning and amendment dates current with changes. -->

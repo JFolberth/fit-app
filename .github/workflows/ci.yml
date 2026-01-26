@@ -43,14 +43,15 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 'lts'
-      - name: Install Playwright and static server
+      - name: Install Playwright
+        working-directory: frontend/tests/functional
         run: |
-          npm install -D @playwright/test http-server wait-on
+          npm ci
           npx playwright install --with-deps
       - name: Start static server for frontend
         run: |
-          nohup npx http-server frontend/src -p 4280 >/dev/null 2>&1 &
-          npx wait-on http://localhost:4280
+          npx -y serve frontend/src -l 4280 &
+          sleep 5
       - name: Run functional tests
         working-directory: frontend/tests/functional
         env:
