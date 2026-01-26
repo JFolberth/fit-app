@@ -23,8 +23,8 @@ test('log activity redirects to homepage with success notification', async ({ pa
   await page.fill('input[name="distance"]', '3.1');
   await page.fill('input[name="avgBpm"]', '140');
   await page.click('button[type="submit"]');
-  // Should redirect to homepage
-  await page.waitForURL('**/index.html');
+  // Should redirect to homepage (either / or /index.html)
+  await page.waitForURL(url => url.pathname === '/' || url.pathname === '/index.html');
   // Success notice should appear on homepage
   const notice = page.locator('.notice.success');
   await expect(notice).toHaveText(/Activity saved/i);
