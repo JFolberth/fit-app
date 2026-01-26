@@ -26,7 +26,8 @@
         "ms-vscode.azurecli",
         "github.vscode-codeql",
         "ms-azuretools.vscode-azure-github-copilot",
-        "github.copilot"
+        "github.copilot",
+        "ms-azuretools.vscode-applicationinsights"
       ],
       "settings": {
         "github.copilot.advanced": {
