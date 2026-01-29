@@ -1,0 +1,49 @@
+openapi: 3.0.3
+info:
+  title: FitApp Coach API
+  version: 0.1.0
+paths:
+  /api/coach/today:
+    get:
+      summary: Get today's half-marathon training recommendation
+      responses:
+        '200':
+          description: Recommendation (AI-driven or fallback)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DailyRecommendation'
+components:
+  schemas:
+    DailyRecommendation:
+      type: object
+      required: [date, goal, title, workout, rationale, confidence, fallback]
+      properties:
+        date:
+          type: string
+          format: date
+        goal:
+          type: string
+          example: half-marathon
+        title:
+          type: string
+        workout:
+          type: object
+          required: [type, durationMinutes, details]
+          properties:
+            type:
+              type: string
+              enum: [Running, Rowing, Rucking]
+            durationMinutes:
+              type: number
+            details:
+              type: array
+              items:
+                type: string
+        rationale:
+          type: string
+        confidence:
+          type: string
+          enum: [low, medium, high]
+        fallback:
+          type: boolean
