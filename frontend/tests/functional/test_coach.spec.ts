@@ -5,15 +5,68 @@ import { test, expect } from '@playwright/test';
  * 
  * Tests home page rendering of recommendation card, loading states,
  * and fallback behavior.
+ * 
+ * NOTE: All tests mock the API since CI doesn't run a backend.
  */
 
 const BASE_URL = process.env.FRONTEND_URL || 'http://localhost:4280';
+
+// Mock recommendation response for tests
+const mockRecommendation = {
+  date: new Date().toISOString().split('T')[0],
+  goal: 'half-marathon',
+  title: 'Easy aerobic run + strides',
+  workout: {
+    type: 'Running',
+    durationMinutes: 45,
+    details: [
+      'Easy pace for 35 minutes',
+      '6 x 20s strides with full recovery',
+      'Cool down 5 minutes'
+    ]
+  },
+  rationale: 'Based on your recent training, today is best for aerobic recovery.',
+  confidence: 'medium',
+  fallback: false
+};
+
+const mockFallbackRecommendation = {
+  ...mockRecommendation,
+  title: 'Easy aerobic run',
+  workout: {
+    type: 'Running',
+    durationMinutes: 45,
+    details: [
+      'Easy conversational pace for 35-45 minutes',
+      'Focus on comfortable breathing',
+      'Optional: 4-6 x 20s strides'
+    ]
+  },
+  rationale: 'A moderate aerobic run is a safe default for maintaining fitness.',
+  confidence: 'low',
+  fallback: true
+};
+
+// Helper to setup API mock
+async function mockCoachAPI(page: any, response = mockRecommendation, delay = 0) {
+  await page.route('**/api/coach/today', async (route: any) => {
+    if (delay > 0) {
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(response)
+    });
+  });
+}
 
 test.describe('AI Coach Recommendation', () => {
   
   test.describe('Home Page Recommendation Card', () => {
     
     test('should display recommendation card on home page', async ({ page }) => {
+      await mockCoachAPI(page);
       await page.goto(BASE_URL);
       
       // Wait for recommendation card to appear
@@ -27,6 +80,7 @@ test.describe('AI Coach Recommendation', () => {
     });
     
     test('should display workout details in card', async ({ page }) => {
+      await mockCoachAPI(page);
       await page.goto(BASE_URL);
       
       const card = page.locator('[data-testid="recommendation-card"]');
@@ -39,6 +93,7 @@ test.describe('AI Coach Recommendation', () => {
     });
     
     test('should display rationale text', async ({ page }) => {
+      await mockCoachAPI(page);
       await page.goto(BASE_URL);
       
       const card = page.locator('[data-testid="recommendation-card"]');
@@ -55,11 +110,8 @@ test.describe('AI Coach Recommendation', () => {
   test.describe('Loading State', () => {
     
     test('should show loading skeleton while fetching', async ({ page }) => {
-      // Slow down network to see loading state
-      await page.route('**/api/coach/today', async route => {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        await route.continue();
-      });
+      // Mock API with delay to see loading state
+      await mockCoachAPI(page, mockRecommendation, 1000);
       
       await page.goto(BASE_URL);
       
@@ -73,10 +125,7 @@ test.describe('AI Coach Recommendation', () => {
     });
     
     test('should show loading text', async ({ page }) => {
-      await page.route('**/api/coach/today', async route => {
-        await new Promise(resolve => setTimeout(resolve, 500));
-        await route.continue();
-      });
+      await mockCoachAPI(page, mockRecommendation, 500);
       
       await page.goto(BASE_URL);
       
@@ -90,30 +139,7 @@ test.describe('AI Coach Recommendation', () => {
   test.describe('Fallback State', () => {
     
     test('should display fallback when API returns fallback', async ({ page }) => {
-      // Mock API to return fallback response
-      await page.route('**/api/coach/today', async route => {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({
-            date: new Date().toISOString().split('T')[0],
-            goal: 'half-marathon',
-            title: 'Easy aerobic run',
-            workout: {
-              type: 'Running',
-              durationMinutes: 45,
-              details: [
-                'Easy conversational pace for 35-45 minutes',
-                'Focus on comfortable breathing',
-                'Optional: 4-6 x 20s strides'
-              ]
-            },
-            rationale: 'A moderate aerobic run is a safe default for maintaining fitness.',
-            confidence: 'low',
-            fallback: true
-          })
-        });
-      });
+      await mockCoachAPI(page, mockFallbackRecommendation);
       
       await page.goto(BASE_URL);
       
@@ -149,6 +175,8 @@ test.describe('AI Coach Recommendation', () => {
 test.describe('Recommendation Refresh After Activity', () => {
   
   test('should show success toast after activity save redirect', async ({ page }) => {
+    await mockCoachAPI(page);
+    
     // Simulate redirect from log-activity with toast data
     await page.goto(BASE_URL);
     
@@ -163,8 +191,8 @@ test.describe('Recommendation Refresh After Activity', () => {
     // Reload to trigger toast display
     await page.reload();
     
-    // Toast should appear
-    const toast = page.locator('.notification.success, .toast.success, [role="alert"]');
+    // Toast should appear (Notification class uses .notice.success)
+    const toast = page.locator('.notice.success');
     await expect(toast).toBeVisible({ timeout: 5000 });
   });
   
@@ -173,7 +201,11 @@ test.describe('Recommendation Refresh After Activity', () => {
     
     await page.route('**/api/coach/today', async route => {
       apiCallCount++;
-      await route.continue();
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(mockRecommendation)
+      });
     });
     
     await page.goto(BASE_URL);
@@ -191,7 +223,11 @@ test.describe('Recommendation Refresh After Activity', () => {
     
     await page.route('**/api/coach/today', async route => {
       apiCallCount++;
-      await route.continue();
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(mockRecommendation)
+      });
     });
     
     // Start on log-activity page
