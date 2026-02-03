@@ -20,6 +20,42 @@ class ActivityBase(BaseModel):
             raise ValueError('type must be one of Running, Rowing, Rucking')
         return v
 
+    @field_validator('distance', mode='before')
+    def coerce_distance(cls, v):
+        """Handle empty strings and convert to None."""
+        if v is None:
+            return None
+        if isinstance(v, str):
+            v = v.strip()
+            if v == '':
+                return None
+            try:
+                return float(v)
+            except ValueError:
+                raise ValueError('distance must be a valid number')
+        return v
+
+    @field_validator('duration', mode='before')
+    def coerce_duration(cls, v):
+        """Handle string input and convert to float."""
+        if v is None:
+            raise ValueError('duration is required')
+        if isinstance(v, str):
+            v = v.strip()
+            if v == '':
+                raise ValueError('duration is required')
+            try:
+                return float(v)
+            except ValueError:
+                raise ValueError('duration must be a valid number')
+        return v
+
+    @field_validator('type')
+    def validate_type(cls, v: str) -> str:
+        if v not in ALLOWED_TYPES:
+            raise ValueError('type must be one of Running, Rowing, Rucking')
+        return v
+
     @field_validator('comments')
     def sanitize_comments(cls, v: Optional[str]) -> Optional[str]:
         """Sanitize comments field to prevent injection attacks."""

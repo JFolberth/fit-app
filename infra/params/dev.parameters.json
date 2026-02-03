@@ -50,6 +50,21 @@
     },
     "zoneRedundant": {
       "value": false
+    },
+    "aiFoundryEndpoint": {
+      "value": "https://fit-app-resource.services.ai.azure.com/api/projects/fit-app"
+    },
+    "aiFoundryModel": {
+      "value": "gpt-5-mini"
+    },
+    "mcpServerEndpoint": {
+      "value": "https://ca-fitapp-mcp-dev.nicemeadow-fd871464.eastus2.azurecontainerapps.io/mcp"
+    },
+    "aiFoundryResourceGroup": {
+      "value": ""
+    },
+    "aiFoundryAccountName": {
+      "value": ""
     }
   }
 }

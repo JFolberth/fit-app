@@ -104,8 +104,23 @@
     </div>
   </main>
 
+  <!-- AI Coach Recommendation Section -->
+  <section class="recommendation-section">
+    <div id="recommendation-container">
+      <!-- Loading state (shown initially) -->
+      <div id="recommendation-loading" class="recommendation-loading" data-testid="recommendation-loading">
+        <div class="skeleton skeleton-header"></div>
+        <div class="skeleton skeleton-title"></div>
+        <div class="skeleton skeleton-workout"></div>
+        <div class="skeleton skeleton-rationale"></div>
+        <p class="loading-text">Generating today's workout recommendation...</p>
+      </div>
+    </div>
+  </section>
+
   <script type="module">
     import { Notification } from './components/Notification.js';
+    import { fetchRecommendation } from './services/api.js';
     
     // Check for toast message from redirect
     const toastData = sessionStorage.getItem('fitapp_toast');
@@ -115,6 +130,127 @@
       const notices = new Notification(document.getElementById('notices'));
       notices.show(type, message);
     }
+    
+    // Fetch and render recommendation
+    async function loadRecommendation() {
+      const container = document.getElementById('recommendation-container');
+      
+      try {
+        const recommendation = await fetchRecommendation();
+        renderRecommendation(recommendation);
+      } catch (error) {
+        console.error('Failed to load recommendation:', error);
+        renderError();
+      }
+    }
+    
+    function renderRecommendation(rec) {
+      const container = document.getElementById('recommendation-container');
+      const isFallback = rec.fallback === true;
+      
+      container.innerHTML = `
+        <div class="recommendation-card ${isFallback ? 'is-fallback' : ''}" data-testid="recommendation-card">
+          <div class="recommendation-header">
+            <div class="recommendation-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                <path d="M2 17l10 5 10-5"></path>
+                <path d="M2 12l10 5 10-5"></path>
+              </svg>
+            </div>
+            <div class="recommendation-header-text">
+              <h2>Today's Half Marathon Training</h2>
+              <span class="date">${formatDate(rec.date)}</span>
+            </div>
+          </div>
+          
+          <h3 class="recommendation-title">${escapeHtml(rec.title)}</h3>
+          
+          <div class="recommendation-workout">
+            <div class="workout-meta">
+              <div class="workout-meta-item">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+                <span>${rec.workout.durationMinutes} minutes</span>
+              </div>
+              <div class="workout-meta-item">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+                </svg>
+                <span>${escapeHtml(rec.workout.type)}</span>
+              </div>
+            </div>
+            <ul class="workout-details">
+              ${rec.workout.details.map(detail => `<li>${escapeHtml(detail)}</li>`).join('')}
+            </ul>
+          </div>
+          
+          <div class="recommendation-rationale">
+            ${escapeHtml(rec.rationale)}
+          </div>
+          
+          ${isFallback ? `
+            <div class="recommendation-fallback ${rec.fallback_reason ? 'fallback-' + rec.fallback_reason : ''}" data-testid="recommendation-fallback">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+              <span>${getFallbackMessage(rec.fallback_reason)}</span>
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }
+    
+    function renderError() {
+      const container = document.getElementById('recommendation-container');
+      container.innerHTML = `
+        <div class="recommendation-error" data-testid="recommendation-error">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+          <p>Unable to load today's recommendation. Please try again later.</p>
+        </div>
+      `;
+    }
+    
+    function formatDate(dateStr) {
+      const date = new Date(dateStr + 'T00:00:00');
+      return date.toLocaleDateString('en-US', { 
+        weekday: 'long', 
+        month: 'long', 
+        day: 'numeric' 
+      });
+    }
+    
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+    
+    function getFallbackMessage(reason) {
+      switch (reason) {
+        case 'ai_unavailable':
+          return '⚠️ Could not connect to AI Foundry - using default workout suggestion';
+        case 'mcp_unavailable':
+          return '⚠️ Could not connect to Azure AI Foundry MCP Server - using default workout suggestion';
+        case 'timeout':
+          return '⚠️ Request timed out - using default workout suggestion';
+        case 'error':
+          return '⚠️ An error occurred - using default workout suggestion';
+        default:
+          return 'Using a default suggestion today';
+      }
+    }
+    
+    // Load recommendation on page load
+    loadRecommendation();
   </script>
 </body>
 </html>

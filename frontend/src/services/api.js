@@ -109,3 +109,15 @@ export async function updateActivity(id, payload) {
 export async function deleteActivity(id) {
   return request(`/activities/${id}`, { method: 'DELETE' });
 }
+
+/**
+ * Fetch today's AI-generated workout recommendation.
+ * 
+ * @returns {Promise<Object>} DailyRecommendation object with date, goal, title, workout, rationale, confidence, fallback
+ */
+export async function fetchRecommendation() {
+  // Add cache-busting parameter to ensure fresh data after activity logging
+  const timestamp = Date.now();
+  return request(`/coach/today?_t=${timestamp}`);
+}
+

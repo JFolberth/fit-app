@@ -32,6 +32,15 @@ param cosmosDatabaseName string
 @description('Cosmos DB activities container name')
 param cosmosActivitiesContainerName string
 
+@description('Azure AI Foundry endpoint URL')
+param aiFoundryEndpoint string = 'https://fit-app-resource.services.ai.azure.com/api/projects/fit-app'
+
+@description('Azure AI Foundry model name')
+param aiFoundryModel string = 'gpt-5-mini'
+
+@description('MCP Server endpoint URL')
+param mcpServerEndpoint string = 'https://ca-fitapp-mcp-dev.nicemeadow-fd871464.eastus2.azurecontainerapps.io/mcp'
+
 // ============================================================================
 // Storage Account (required for Azure Functions Flex Consumption)
 // Native resource for direct RBAC scope reference
@@ -148,6 +157,14 @@ module functionApp 'br/public:avm/res/web/site:0.19.4' = {
     siteConfig: {
       ftpsState: 'Disabled'
       minTlsVersion: '1.2'
+      cors: {
+        allowedOrigins: [
+          'https://*.azurestaticapps.net'
+          'http://localhost:4280'
+          'http://127.0.0.1:4280'
+        ]
+        supportCredentials: false
+      }
       appSettings: [
         {
           name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
@@ -172,6 +189,18 @@ module functionApp 'br/public:avm/res/web/site:0.19.4' = {
         {
           name: 'COSMOS_PARTITION_KEY'
           value: 'type'
+        }
+        {
+          name: 'AI_FOUNDRY_ENDPOINT'
+          value: aiFoundryEndpoint
+        }
+        {
+          name: 'AI_FOUNDRY_MODEL'
+          value: aiFoundryModel
+        }
+        {
+          name: 'MCP_SERVER_ENDPOINT'
+          value: mcpServerEndpoint
         }
       ]
     }

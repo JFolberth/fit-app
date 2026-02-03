@@ -51,6 +51,21 @@ param appServicePlanSku string
 @description('Enable zone redundancy')
 param zoneRedundant bool
 
+@description('Azure AI Foundry endpoint URL')
+param aiFoundryEndpoint string = 'https://fit-app-resource.services.ai.azure.com/api/projects/fit-app'
+
+@description('Azure AI Foundry model name')
+param aiFoundryModel string = 'gpt-5-mini'
+
+@description('MCP Server endpoint URL')
+param mcpServerEndpoint string = 'https://ca-fitapp-mcp-dev.nicemeadow-fd871464.eastus2.azurecontainerapps.io/mcp'
+
+@description('Azure AI Foundry resource group name (optional - for RBAC assignment)')
+param aiFoundryResourceGroup string = ''
+
+@description('Azure AI Foundry account name (optional - for RBAC assignment)')
+param aiFoundryAccountName string = ''
+
 // ============================================================================
 // Resource Groups
 // ============================================================================
@@ -152,6 +167,9 @@ module backend 'modules/backend.bicep' = {
     cosmosEndpoint: data.outputs.cosmosEndpoint
     cosmosDatabaseName: data.outputs.cosmosDatabaseName
     cosmosActivitiesContainerName: data.outputs.cosmosActivitiesContainerName
+    aiFoundryEndpoint: aiFoundryEndpoint
+    aiFoundryModel: aiFoundryModel
+    mcpServerEndpoint: mcpServerEndpoint
   }
 }
 
@@ -168,6 +186,27 @@ module cosmosRoleAssignment 'modules/cosmos-rbac.bicep' = {
     cosmosAccountName: data.outputs.cosmosAccountName
     functionAppPrincipalId: backend.outputs.functionAppPrincipalId
     roleDefinitionId: cosmosDataContributorRoleId
+  }
+}
+
+// ============================================================================
+// RBAC Role Assignment: Functions MI -> Azure AI Foundry (Cognitive Services User)
+// ============================================================================
+// This role assignment is conditional - only created if aiFoundryResourceId is provided
+// The Cognitive Services User role allows the Function App to call AI Foundry APIs
+// Role definition ID: a97b65f3-24c7-4388-baec-2e87135dc908
+
+// Reference to external AI Foundry resource group (if RBAC assignment needed)
+resource aiFoundryRg 'Microsoft.Resources/resourceGroups@2024-03-01' existing = if (!empty(aiFoundryResourceGroup)) {
+  name: aiFoundryResourceGroup
+}
+
+module aiFoundryRoleAssignment 'modules/ai-foundry-rbac.bicep' = if (!empty(aiFoundryResourceGroup) && !empty(aiFoundryAccountName)) {
+  name: 'ai-foundry-rbac-deployment'
+  scope: aiFoundryRg
+  params: {
+    aiFoundryAccountName: aiFoundryAccountName
+    functionAppPrincipalId: backend.outputs.functionAppPrincipalId
   }
 }
 
