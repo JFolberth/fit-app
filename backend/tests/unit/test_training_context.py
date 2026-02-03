@@ -6,8 +6,6 @@ Tests build_training_context function with various activity scenarios.
 
 from datetime import date, timedelta
 
-import pytest
-
 from shared.training_context import (
     build_training_context,
     _find_last_hard_workout,
