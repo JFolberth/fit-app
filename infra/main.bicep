@@ -60,8 +60,11 @@ param aiFoundryModel string = 'gpt-5-mini'
 @description('MCP Server endpoint URL')
 param mcpServerEndpoint string = 'https://ca-fitapp-mcp-dev.nicemeadow-fd871464.eastus2.azurecontainerapps.io/mcp'
 
-@description('Azure AI Foundry resource ID (optional - for RBAC assignment)')
-param aiFoundryResourceId string = ''
+@description('Azure AI Foundry resource group name (optional - for RBAC assignment)')
+param aiFoundryResourceGroup string = ''
+
+@description('Azure AI Foundry account name (optional - for RBAC assignment)')
+param aiFoundryAccountName string = ''
 
 // ============================================================================
 // Resource Groups
@@ -193,11 +196,16 @@ module cosmosRoleAssignment 'modules/cosmos-rbac.bicep' = {
 // The Cognitive Services User role allows the Function App to call AI Foundry APIs
 // Role definition ID: a97b65f3-24c7-4388-baec-2e87135dc908
 
-module aiFoundryRoleAssignment 'modules/ai-foundry-rbac.bicep' = if (!empty(aiFoundryResourceId)) {
+// Reference to external AI Foundry resource group (if RBAC assignment needed)
+resource aiFoundryRg 'Microsoft.Resources/resourceGroups@2024-03-01' existing = if (!empty(aiFoundryResourceGroup)) {
+  name: aiFoundryResourceGroup
+}
+
+module aiFoundryRoleAssignment 'modules/ai-foundry-rbac.bicep' = if (!empty(aiFoundryResourceGroup) && !empty(aiFoundryAccountName)) {
   name: 'ai-foundry-rbac-deployment'
-  scope: subscription()
+  scope: aiFoundryRg
   params: {
-    aiFoundryResourceId: aiFoundryResourceId
+    aiFoundryAccountName: aiFoundryAccountName
     functionAppPrincipalId: backend.outputs.functionAppPrincipalId
   }
 }

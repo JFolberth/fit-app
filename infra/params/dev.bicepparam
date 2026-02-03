@@ -36,7 +36,7 @@ param aiFoundryEndpoint = 'https://fit-app-resource.services.ai.azure.com/api/pr
 param aiFoundryModel = 'gpt-5-mini'
 param mcpServerEndpoint = 'https://ca-fitapp-mcp-dev.nicemeadow-fd871464.eastus2.azurecontainerapps.io/mcp'
 
-// AI Foundry RBAC - provide the resource ID of the AI Foundry resource for RBAC assignment
-// Format: /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.CognitiveServices/accounts/{accountName}
+// AI Foundry RBAC - provide the resource group and account name for RBAC assignment
 // Leave empty to skip RBAC assignment (useful if assigning manually or via different process)
-param aiFoundryResourceId = ''
+param aiFoundryResourceGroup = ''
+param aiFoundryAccountName = ''

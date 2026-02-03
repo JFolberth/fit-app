@@ -47,9 +47,9 @@ const mockFallbackRecommendation = {
   fallback: true
 };
 
-// Helper to setup API mock
+// Helper to setup API mock (matches /api/coach/today with optional query params)
 async function mockCoachAPI(page: any, response = mockRecommendation, delay = 0) {
-  await page.route('**/api/coach/today', async (route: any) => {
+  await page.route('**/api/coach/today**', async (route: any) => {
     if (delay > 0) {
       await new Promise(resolve => setTimeout(resolve, delay));
     }
@@ -153,7 +153,7 @@ test.describe('AI Coach Recommendation', () => {
     
     test('should display error state when API fails', async ({ page }) => {
       // Mock API to fail
-      await page.route('**/api/coach/today', async route => {
+      await page.route('**/api/coach/today**', async route => {
         await route.fulfill({
           status: 500,
           contentType: 'application/json',
@@ -199,7 +199,7 @@ test.describe('Recommendation Refresh After Activity', () => {
   test('should fetch fresh recommendation on page load', async ({ page }) => {
     let apiCallCount = 0;
     
-    await page.route('**/api/coach/today', async route => {
+    await page.route('**/api/coach/today**', async route => {
       apiCallCount++;
       await route.fulfill({
         status: 200,
@@ -221,7 +221,7 @@ test.describe('Recommendation Refresh After Activity', () => {
   test('should refresh recommendation after navigation from log-activity', async ({ page }) => {
     let apiCallCount = 0;
     
-    await page.route('**/api/coach/today', async route => {
+    await page.route('**/api/coach/today**', async route => {
       apiCallCount++;
       await route.fulfill({
         status: 200,
