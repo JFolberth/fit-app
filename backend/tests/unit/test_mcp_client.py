@@ -6,7 +6,7 @@ Tests MCPClient with mocked HTTP responses.
 
 import json
 from datetime import date
-from unittest.mock import MagicMock, patch, AsyncMock
+from unittest.mock import patch
 
 import pytest
 
