@@ -12,7 +12,7 @@
       "installBicep": true,
       "version": "latest"
     },
-    "ghcr.io/azure/azure-dev/azd:latest": {},
+    "ghcr.io/azure/azure-dev/azd:0": {},
     "ghcr.io/devcontainers/features/powershell:1": {}
   },
   "postCreateCommand": "pip install -r backend/requirements.txt",

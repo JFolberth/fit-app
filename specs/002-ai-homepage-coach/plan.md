@@ -10,9 +10,11 @@ Add a new backend endpoint that produces a structured “today’s workout” re
 ## Technical Context
 
 **Language/Version**: Python 3.11 (Azure Functions) + vanilla JS (frontend)  
-**Primary Dependencies**: Azure Functions Python, Pydantic validation (backend), Playwright (tests)  
-**Storage**: Azure Cosmos DB (activities container)  
-**AI Platform**: Azure AI Foundry agent (resource `fit-app-resource`, project `fit-app`) + Azure AI Search (existing/manual)  
+**Primary Dependencies**: Azure Functions Python, Pydantic validation (backend), Playwright (tests), MCP client SDK (Python, for remote MCP server communication via Streamable HTTP/SSE), Azure AI Foundry SDK (azure-ai-inference or azure-ai-projects), Azure Identity SDK (for managed identity)  
+**Storage**: Azure Cosmos DB (activities container, accessed via remote MCP server)  
+**AI Platform**: Azure AI Foundry agent at `https://fit-app-resource.services.ai.azure.com/api/projects/fit-app` using `gpt-5-mini` model + Azure AI Search (existing/manual)  
+**Integration**: Remote MCP server at `https://ca-fitapp-mcp-dev.nicemeadow-fd871464.eastus2.azurecontainerapps.io/mcp` (Streamable HTTP/SSE protocol, no auth) with tools: query_cosmos, count_document, list_distinct_values  
+**Authentication**: Backend Function uses **managed identity** for Azure AI Foundry access (no secrets/keys); MCP server requires no authentication  
 **Testing**: pytest (backend), Playwright (frontend functional)  
 **Target Platform**: Azure Functions + Azure Static Web Apps  
 **Project Type**: Web application (backend/ + frontend/)  
@@ -24,11 +26,11 @@ Add a new backend endpoint that produces a structured “today’s workout” re
 
 GATE: Must pass before implementation.
 
-- Determinism: tooling and dependencies pinned; avoid environment-only behavior.
-- Devcontainer-first: all commands must run inside the devcontainer; CI should mirror the container.
-- Test-first: add/adjust unit + functional + integration tests for new behavior.
-- CI quality gates: CI must pass before merge; no bypassing checks.
-- Azure-optimized: use managed identity where possible; no secrets in frontend or repo; use App Settings/Key Vault.
+- Determinism: tooling and dependencies pinned; avoid environment-only behavior. ✓ (Azure AI Foundry SDK version will be pinned in requirements.txt)
+- Devcontainer-first: all commands must run inside the devcontainer; CI should mirror the container. ✓
+- Test-first: add/adjust unit + functional + integration tests for new behavior. ✓ (unit tests with mocked AI + MCP, integration tests with real services)
+- CI quality gates: CI must pass before merge; no bypassing checks. ✓
+- Azure-optimized: use managed identity where possible; no secrets in frontend or repo; use App Settings/Key Vault. ✓ (Azure AI Foundry access via managed identity; MCP server requires no authentication)
 
 
 ## Project Structure
@@ -67,9 +69,10 @@ frontend/
 1. Home page loads.
 2. Frontend calls `GET /api/coach/today`.
 3. Backend:
-   - Loads recent activities (last N days) from Cosmos.
+   - Connects to remote MCP server at `https://ca-fitapp-mcp-dev.nicemeadow-fd871464.eastus2.azurecontainerapps.io/mcp` (dev environment) via Streamable HTTP
+   - Loads recent activities (last N days) from Cosmos via MCP tools (`query_cosmos`, `count_document`, `list_distinct_values`)
    - Builds a concise training context summary.
-   - Calls the existing AI agent/AI Search integration to generate a structured recommendation (JSON).
+   - Calls Azure AI Foundry agent at `https://fit-app-resource.services.ai.azure.com/api/projects/fit-app` using `gpt-5-mini` model to generate a structured recommendation (JSON).
    - Validates and normalizes output.
    - Returns JSON response.
 4. Frontend renders recommendation card.
@@ -107,8 +110,20 @@ Response (200, fallback): `fallback: true` and a generic safe workout.
 
 Response (500): should be avoided; prefer fallback 200.
 
-NEEDS CLARIFICATION:
-- Agent invocation details: we know the Foundry resource is `fit-app-resource` and project is `fit-app`, but we still need the agent identifier (name/id), invocation method (SDK vs REST), and auth (managed identity vs key).
+**Agent Configuration (Resolved)**:
+- Endpoint: `https://fit-app-resource.services.ai.azure.com/api/projects/fit-app`
+- Model: `gpt-5-mini`
+- Authentication: **Managed Identity** (Function App system-assigned or user-assigned identity with appropriate RBAC role on AI Foundry resource)
+- SDK: Use Azure AI Foundry Python SDK (`azure-ai-inference` or `azure-ai-projects`) with `azure-identity` for credential management
+
+**MCP Server Configuration (Resolved)**:
+- Endpoint: `https://ca-fitapp-mcp-dev.nicemeadow-fd871464.eastus2.azurecontainerapps.io/mcp`
+- Protocol: **Streamable HTTP** (SSE-based)
+- Authentication: None (unauthenticated for now)
+- Available Tools:
+  - `query_cosmos`: Query Cosmos DB for activities
+  - `count_document`: Count documents matching criteria
+  - `list_distinct_values`: Get distinct values for a field
 
 ## Frontend UX
 
@@ -129,7 +144,13 @@ NEEDS CLARIFICATION:
 - Backend unit tests:
   - Context building from recent activities.
   - Fallback behavior when agent call fails.
+  - Fallback behavior when MCP server is unavailable.
   - Output validation schema.
+  - Mocked MCP client responses for isolation.
+
+- Backend integration tests:
+  - MCP server connectivity and data retrieval (dev environment).
+  - End-to-end recommendation generation with real MCP server.
 
 - Frontend functional tests (Playwright):
   - Home page renders recommendation from mocked endpoint.

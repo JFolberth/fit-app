@@ -1,49 +1,177 @@
 openapi: 3.0.3
 info:
-  title: FitApp Coach API
-  version: 0.1.0
+  title: Fit App - AI Coach API
+  description: AI-powered daily half marathon training recommendations
+  version: 1.0.0
+  contact:
+    name: Fit App Team
+
+servers:
+  - url: https://api.fit-app.example.com
+    description: Production
+  - url: http://localhost:7071
+    description: Local Development
+
 paths:
   /api/coach/today:
     get:
-      summary: Get today's half-marathon training recommendation
+      summary: Get today's half marathon training recommendation
+      description: |
+        Returns an AI-generated daily workout recommendation for half marathon training
+        based on the user's recent activities (last 14 days). Always returns a recommendation,
+        either AI-generated or a safe fallback.
+      operationId: getTodaysRecommendation
+      tags:
+        - Coach
       responses:
         '200':
-          description: Recommendation (AI-driven or fallback)
+          description: Successful response with recommendation
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/DailyRecommendation'
+              examples:
+                aiGenerated:
+                  summary: AI-generated recommendation
+                  value:
+                    date: "2026-02-03"
+                    goal: "half-marathon"
+                    title: "Easy aerobic run + strides"
+                    workout:
+                      type: "Running"
+                      durationMinutes: 45
+                      details:
+                        - "Easy pace for 35 minutes"
+                        - "6 x 20s strides with full recovery"
+                        - "Cool down 5 minutes"
+                    rationale: "Based on your last hard run 2 days ago and total volume this week, today is best used for aerobic recovery and leg turnover."
+                    confidence: "medium"
+                    fallback: false
+                fallback:
+                  summary: Fallback recommendation (AI unavailable)
+                  value:
+                    date: "2026-02-03"
+                    goal: "half-marathon"
+                    title: "Easy aerobic run"
+                    workout:
+                      type: "Running"
+                      durationMinutes: 45
+                      details:
+                        - "Easy conversational pace for 35-45 minutes"
+                        - "Focus on comfortable breathing"
+                        - "Optional: 4-6 x 20s strides"
+                    rationale: "A moderate aerobic run is a safe default for maintaining fitness and building endurance."
+                    confidence: "low"
+                    fallback: true
+        '500':
+          description: Internal server error (should be rare; prefer 200 with fallback)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
 components:
   schemas:
     DailyRecommendation:
       type: object
-      required: [date, goal, title, workout, rationale, confidence, fallback]
+      required:
+        - date
+        - goal
+        - title
+        - workout
+        - rationale
+        - confidence
+        - fallback
       properties:
         date:
           type: string
           format: date
+          description: The date for this recommendation (ISO 8601 format)
+          example: "2026-02-03"
         goal:
           type: string
-          example: half-marathon
+          description: Training goal
+          enum:
+            - half-marathon
+          example: "half-marathon"
         title:
           type: string
+          description: Short, descriptive title for today's workout
+          example: "Easy aerobic run + strides"
+          maxLength: 100
         workout:
-          type: object
-          required: [type, durationMinutes, details]
-          properties:
-            type:
-              type: string
-              enum: [Running, Rowing, Rucking]
-            durationMinutes:
-              type: number
-            details:
-              type: array
-              items:
-                type: string
+          $ref: '#/components/schemas/WorkoutDetails'
         rationale:
           type: string
+          description: Brief explanation of why this workout is recommended today
+          example: "Based on your last hard run 2 days ago and total volume this week, today is best used for aerobic recovery and leg turnover."
+          maxLength: 500
         confidence:
           type: string
-          enum: [low, medium, high]
+          description: Confidence level of the recommendation
+          enum:
+            - low
+            - medium
+            - high
+          example: "medium"
         fallback:
           type: boolean
+          description: True if this is a fallback recommendation (AI unavailable), false if AI-generated
+          example: false
+
+    WorkoutDetails:
+      type: object
+      required:
+        - type
+        - durationMinutes
+        - details
+      properties:
+        type:
+          type: string
+          description: Type of workout activity
+          enum:
+            - Running
+            - Cross-training
+            - Rest
+            - Strength
+          example: "Running"
+        durationMinutes:
+          type: integer
+          description: Recommended workout duration in minutes
+          minimum: 0
+          maximum: 240
+          example: 45
+        details:
+          type: array
+          description: Step-by-step workout instructions
+          items:
+            type: string
+          minItems: 1
+          maxItems: 10
+          example:
+            - "Easy pace for 35 minutes"
+            - "6 x 20s strides with full recovery"
+            - "Cool down 5 minutes"
+
+    Error:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          description: Error type
+          example: "InternalServerError"
+        message:
+          type: string
+          description: User-friendly error message
+          example: "Unable to generate recommendation at this time. Please try again later."
+        details:
+          type: string
+          description: Additional error details (optional, for debugging)
+          example: "AI agent timeout"
+
+tags:
+  - name: Coach
+    description: AI-powered training coach endpoints
