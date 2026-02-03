@@ -93,15 +93,18 @@ class MCPClient:
             # Store session ID from response header
             self._session_id = response.headers.get("mcp-session-id")
             
-            # Parse response (may be SSE or JSON)
+            # Parse response (may be SSE or JSON) for validation only; result is not used
             content_type = response.headers.get("content-type", "")
             if "text/event-stream" in content_type:
-                result = self._parse_sse_response(response.text)
+                # Validate SSE payload; ignore parsed content
+                self._parse_sse_response(response.text)
             else:
                 try:
-                    result = response.json()
+                    # Validate JSON payload; ignore parsed content
+                    response.json()
                 except json.JSONDecodeError:
-                    result = None
+                    # Ignore invalid JSON; initialization may still succeed based on headers
+                    pass
             
             logger.info(f"MCP session initialized: {self._session_id}")
             
