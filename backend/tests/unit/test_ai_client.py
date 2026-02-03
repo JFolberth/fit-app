@@ -5,7 +5,6 @@ Tests AIClient with mocked responses.
 """
 
 import json
-from datetime import date, timedelta
 from unittest.mock import MagicMock, patch
 
 import pytest
