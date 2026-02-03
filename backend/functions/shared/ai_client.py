@@ -43,7 +43,7 @@ You MUST respond with valid JSON matching this exact schema:
 {
   "title": "string (max 100 chars) - short workout title",
   "workout": {
-    "type": "Running" | "Cross-training" | "Rest"
+    "type": "Running" | "Cross-training" | "Rest",
     "durationMinutes": number (0-240),
     "details": ["string array of 1-10 workout steps"]
   },
