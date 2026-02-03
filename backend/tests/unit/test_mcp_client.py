@@ -4,7 +4,6 @@ Unit tests for MCP client.
 Tests MCPClient with mocked HTTP responses.
 """
 
-import json
 from datetime import date
 from unittest.mock import patch
 
