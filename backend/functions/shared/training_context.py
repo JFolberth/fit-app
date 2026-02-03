@@ -4,7 +4,7 @@ Training context builder for AI coach feature.
 Builds a TrainingContext summary from recent activity data retrieved via MCP.
 """
 
-from datetime import date, timedelta
+from datetime import date
 from typing import Any, Dict, List, Optional
 
 from .models import TrainingContext
