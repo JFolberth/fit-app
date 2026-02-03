@@ -4,7 +4,6 @@ Azure Function endpoint for AI coach daily recommendations.
 GET /api/coach/today - Returns today's half marathon training recommendation.
 """
 
-import asyncio
 import json
 import logging
 import os
