@@ -573,3 +573,250 @@ main {
   margin-bottom: var(--space-lg);
 }
 
+/* ============================================================================
+   AI Coach Recommendation Card
+   ============================================================================ */
+
+.recommendation-section {
+  max-width: 600px;
+  margin: var(--space-2xl) auto;
+  padding: 0 var(--space-lg);
+}
+
+.recommendation-card {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl);
+  box-shadow: var(--shadow-md);
+}
+
+.recommendation-card.is-fallback {
+  border-color: var(--color-warning);
+  border-style: dashed;
+}
+
+.recommendation-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+}
+
+.recommendation-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+  border-radius: var(--radius-md);
+  color: white;
+}
+
+.recommendation-icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.recommendation-header-text h2 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: var(--space-xs);
+}
+
+.recommendation-header-text .date {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
+.recommendation-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin-bottom: var(--space-md);
+}
+
+.recommendation-workout {
+  background: var(--color-bg-elevated);
+  border-radius: var(--radius-md);
+  padding: var(--space-lg);
+  margin-bottom: var(--space-lg);
+}
+
+.workout-meta {
+  display: flex;
+  gap: var(--space-lg);
+  margin-bottom: var(--space-md);
+  padding-bottom: var(--space-md);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.workout-meta-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+}
+
+.workout-meta-item svg {
+  width: 16px;
+  height: 16px;
+  color: var(--color-primary-light);
+}
+
+.workout-details {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.workout-details li {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  padding: var(--space-sm) 0;
+  color: var(--color-text);
+  font-size: 0.9375rem;
+}
+
+.workout-details li::before {
+  content: "•";
+  color: var(--color-primary-light);
+  font-weight: bold;
+}
+
+.recommendation-rationale {
+  color: var(--color-text-muted);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  padding: var(--space-md);
+  background: var(--color-bg-elevated);
+  border-radius: var(--radius-md);
+  border-left: 3px solid var(--color-primary);
+}
+
+.recommendation-fallback {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  background: rgba(245, 158, 11, 0.1);
+  border-radius: var(--radius-sm);
+  color: var(--color-warning);
+  font-size: 0.8125rem;
+}
+
+/* AI Foundry unavailable - stronger warning */
+.recommendation-fallback.fallback-ai_unavailable {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--color-error);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+/* MCP/Foundry connection unavailable - red warning (connection issue) */
+.recommendation-fallback.fallback-mcp_unavailable {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--color-error);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+/* Timeout - warning */
+.recommendation-fallback.fallback-timeout {
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--color-warning);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+/* Error - red warning */
+.recommendation-fallback.fallback-error {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--color-error);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.recommendation-fallback svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Recommendation Loading State */
+.recommendation-loading {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl);
+}
+
+.recommendation-loading .skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-bg-elevated) 0%,
+    var(--color-bg-input) 50%,
+    var(--color-bg-elevated) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+  border-radius: var(--radius-sm);
+}
+
+.recommendation-loading .skeleton-header {
+  height: 48px;
+  margin-bottom: var(--space-lg);
+}
+
+.recommendation-loading .skeleton-title {
+  height: 32px;
+  width: 70%;
+  margin-bottom: var(--space-md);
+}
+
+.recommendation-loading .skeleton-workout {
+  height: 120px;
+  margin-bottom: var(--space-lg);
+}
+
+.recommendation-loading .skeleton-rationale {
+  height: 60px;
+}
+
+.recommendation-loading .loading-text {
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+  margin-top: var(--space-md);
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Recommendation Error State */
+.recommendation-error {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-error);
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl);
+  text-align: center;
+}
+
+.recommendation-error svg {
+  width: 48px;
+  height: 48px;
+  color: var(--color-error);
+  margin-bottom: var(--space-md);
+}
+
+.recommendation-error p {
+  color: var(--color-text-muted);
+}
+
+

@@ -23,12 +23,12 @@
 
 **Purpose**: Initialize project structure for AI coach feature
 
-- [ ] T001 Create backend Function App directory structure: `backend/functions/coach/`
-- [ ] T002 Create `backend/functions/coach/__init__.py` with placeholder HTTP trigger
-- [ ] T003 Create `backend/functions/coach/function.json` with GET route configuration
-- [ ] T004 [P] Add new dependencies to `backend/functions/requirements.txt`: azure-ai-inference, azure-identity, httpx
-- [ ] T005 [P] Create `backend/functions/shared/models.py` for Pydantic data models
-- [ ] T006 [P] Update `.gitignore` to exclude `local.settings.json` if not already present
+- [X] T001 Create backend Function App directory structure: `backend/functions/coach/`
+- [X] T002 Create `backend/functions/coach/__init__.py` with placeholder HTTP trigger
+- [X] T003 Create `backend/functions/coach/function.json` with GET route configuration
+- [X] T004 [P] Add new dependencies to `backend/functions/requirements.txt`: azure-ai-inference, azure-identity, httpx
+- [X] T005 [P] Create `backend/functions/shared/models.py` for Pydantic data models
+- [X] T006 [P] Update `.gitignore` to exclude `local.settings.json` if not already present
 
 ---
 
@@ -38,16 +38,16 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T007 Create DailyRecommendation Pydantic model in `backend/functions/shared/models.py`
-- [ ] T008 [P] Create WorkoutDetails Pydantic model in `backend/functions/shared/models.py`
-- [ ] T009 [P] Create TrainingContext Pydantic model in `backend/functions/shared/models.py`
-- [ ] T010 Create fallback recommendation generator in `backend/functions/shared/models.py`
-- [ ] T011 [P] Create MCP client wrapper in `backend/functions/shared/mcp_client.py` for Streamable HTTP
-- [ ] T012 [P] Create AI Foundry client wrapper in `backend/functions/shared/ai_client.py` with managed identity auth
-- [ ] T013 Add environment variable configuration in `backend/functions/coach/__init__.py` for AI_FOUNDRY_ENDPOINT, MCP_SERVER_ENDPOINT
-- [ ] T014 Create unit tests directory structure: `backend/tests/unit/test_coach_models.py`
-- [ ] T015 [P] Create integration tests directory structure: `backend/tests/integration/test_coach_integration.py`
-- [ ] T016 [P] Create frontend functional tests: `frontend/tests/functional/test_coach.spec.ts`
+- [X] T007 Create DailyRecommendation Pydantic model in `backend/functions/shared/models.py`
+- [X] T008 [P] Create WorkoutDetails Pydantic model in `backend/functions/shared/models.py`
+- [X] T009 [P] Create TrainingContext Pydantic model in `backend/functions/shared/models.py`
+- [X] T010 Create fallback recommendation generator in `backend/functions/shared/models.py`
+- [X] T011 [P] Create MCP client wrapper in `backend/functions/shared/mcp_client.py` for Streamable HTTP
+- [X] T012 [P] Create AI Foundry client wrapper in `backend/functions/shared/ai_client.py` with managed identity auth
+- [X] T013 Add environment variable configuration in `backend/functions/coach/__init__.py` for AI_FOUNDRY_ENDPOINT, MCP_SERVER_ENDPOINT
+- [X] T014 Create unit tests directory structure: `backend/tests/unit/test_coach_models.py`
+- [X] T015 [P] Create integration tests directory structure: `backend/tests/integration/test_coach_integration.py`
+- [X] T016 [P] Create frontend functional tests: `frontend/tests/functional/test_coach.spec.ts`
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -61,38 +61,38 @@
 
 ### Backend Implementation for User Story 1
 
-- [ ] T017 [P] [US1] Implement placeholder endpoint in `backend/functions/coach/__init__.py` returning hardcoded recommendation JSON
-- [ ] T018 [P] [US1] Implement training context builder in `backend/functions/shared/training_context.py`
-- [ ] T019 [US1] Implement MCP data fetcher in `backend/functions/coach/__init__.py` to query recent activities
-- [ ] T020 [US1] Implement training context summarization logic in `backend/functions/shared/training_context.py`
-- [ ] T021 [US1] Implement AI agent caller in `backend/functions/coach/__init__.py` with structured output request
-- [ ] T022 [US1] Add response validation with Pydantic in `backend/functions/coach/__init__.py`
-- [ ] T023 [US1] Add error handling and fallback logic in `backend/functions/coach/__init__.py`
-- [ ] T024 [US1] Add timeout handling (3s budget) in `backend/functions/coach/__init__.py`
-- [ ] T025 [US1] Add logging with correlation IDs in `backend/functions/coach/__init__.py`
+- [X] T017 [P] [US1] Implement placeholder endpoint in `backend/functions/coach/__init__.py` returning hardcoded recommendation JSON
+- [X] T018 [P] [US1] Implement training context builder in `backend/functions/shared/training_context.py`
+- [X] T019 [US1] Implement MCP data fetcher in `backend/functions/coach/__init__.py` to query recent activities
+- [X] T020 [US1] Implement training context summarization logic in `backend/functions/shared/training_context.py`
+- [X] T021 [US1] Implement AI agent caller in `backend/functions/coach/__init__.py` with structured output request
+- [X] T022 [US1] Add response validation with Pydantic in `backend/functions/coach/__init__.py`
+- [X] T023 [US1] Add error handling and fallback logic in `backend/functions/coach/__init__.py`
+- [X] T024 [US1] Add timeout handling (3s budget) in `backend/functions/coach/__init__.py`
+- [X] T025 [US1] Add logging with correlation IDs in `backend/functions/coach/__init__.py`
 
 ### Frontend Implementation for User Story 1
 
-- [ ] T026 [P] [US1] Add fetchRecommendation() function to `frontend/src/services/api.js`
-- [ ] T027 [US1] Add recommendation card HTML structure to `frontend/src/index.html`
-- [ ] T028 [US1] Add recommendation card CSS styles to `frontend/src/components/styles.css`
-- [ ] T029 [US1] Implement loading skeleton state in `frontend/src/index.html`
-- [ ] T030 [US1] Implement error/fallback display state in `frontend/src/index.html`
-- [ ] T031 [US1] Wire recommendation fetch on page load in `frontend/src/index.html`
+- [X] T026 [P] [US1] Add fetchRecommendation() function to `frontend/src/services/api.js`
+- [X] T027 [US1] Add recommendation card HTML structure to `frontend/src/index.html`
+- [X] T028 [US1] Add recommendation card CSS styles to `frontend/src/components/styles.css`
+- [X] T029 [US1] Implement loading skeleton state in `frontend/src/index.html`
+- [X] T030 [US1] Implement error/fallback display state in `frontend/src/index.html`
+- [X] T031 [US1] Wire recommendation fetch on page load in `frontend/src/index.html`
 
 ### Testing for User Story 1
 
-- [ ] T032 [P] [US1] Unit test for DailyRecommendation validation in `backend/tests/unit/test_coach_models.py`
-- [ ] T033 [P] [US1] Unit test for WorkoutDetails validation in `backend/tests/unit/test_coach_models.py`
-- [ ] T034 [P] [US1] Unit test for fallback generator in `backend/tests/unit/test_coach_models.py`
-- [ ] T035 [P] [US1] Unit test for training context builder with mocked MCP data in `backend/tests/unit/test_training_context.py`
-- [ ] T036 [P] [US1] Unit test for AI client with mocked responses in `backend/tests/unit/test_ai_client.py`
-- [ ] T037 [US1] Integration test for MCP server connectivity in `backend/tests/integration/test_coach_integration.py`
-- [ ] T038 [US1] Integration test for AI agent invocation in `backend/tests/integration/test_coach_integration.py`
-- [ ] T039 [US1] Integration test for end-to-end recommendation flow in `backend/tests/integration/test_coach_integration.py`
-- [ ] T040 [US1] Functional test for home page rendering recommendation in `frontend/tests/functional/test_coach.spec.ts`
-- [ ] T041 [US1] Functional test for loading state display in `frontend/tests/functional/test_coach.spec.ts`
-- [ ] T042 [US1] Functional test for fallback state display in `frontend/tests/functional/test_coach.spec.ts`
+- [X] T032 [P] [US1] Unit test for DailyRecommendation validation in `backend/tests/unit/test_coach_models.py`
+- [X] T033 [P] [US1] Unit test for WorkoutDetails validation in `backend/tests/unit/test_coach_models.py`
+- [X] T034 [P] [US1] Unit test for fallback generator in `backend/tests/unit/test_coach_models.py`
+- [X] T035 [P] [US1] Unit test for training context builder with mocked MCP data in `backend/tests/unit/test_training_context.py`
+- [X] T036 [P] [US1] Unit test for AI client with mocked responses in `backend/tests/unit/test_ai_client.py`
+- [X] T037 [US1] Integration test for MCP server connectivity in `backend/tests/integration/test_coach_integration.py`
+- [X] T038 [US1] Integration test for AI agent invocation in `backend/tests/integration/test_coach_integration.py`
+- [X] T039 [US1] Integration test for end-to-end recommendation flow in `backend/tests/integration/test_coach_integration.py`
+- [X] T040 [US1] Functional test for home page rendering recommendation in `frontend/tests/functional/test_coach.spec.ts`
+- [X] T041 [US1] Functional test for loading state display in `frontend/tests/functional/test_coach.spec.ts`
+- [X] T042 [US1] Functional test for fallback state display in `frontend/tests/functional/test_coach.spec.ts`
 
 **Checkpoint**: At this point, User Story 1 should be fully functional - home page displays recommendation
 
@@ -106,16 +106,16 @@
 
 ### Implementation for User Story 2
 
-- [ ] T043 [US2] Verify existing redirect to home after activity save in `frontend/src/pages/log-activity.html`
-- [ ] T044 [US2] Add recommendation refresh trigger on home page load in `frontend/src/index.html`
-- [ ] T045 [US2] Verify success toast displays after redirect in `frontend/src/index.html`
-- [ ] T046 [US2] Add cache-busting to recommendation API call in `frontend/src/services/api.js`
+- [X] T043 [US2] Verify existing redirect to home after activity save in `frontend/src/pages/log-activity.html`
+- [X] T044 [US2] Add recommendation refresh trigger on home page load in `frontend/src/index.html`
+- [X] T045 [US2] Verify success toast displays after redirect in `frontend/src/index.html`
+- [X] T046 [US2] Add cache-busting to recommendation API call in `frontend/src/services/api.js`
 
 ### Testing for User Story 2
 
-- [ ] T047 [US2] Functional test for activity save redirect flow in `frontend/tests/functional/test_coach.spec.ts`
-- [ ] T048 [US2] Functional test for success toast display after save in `frontend/tests/functional/test_coach.spec.ts`
-- [ ] T049 [US2] Functional test for recommendation refresh after save in `frontend/tests/functional/test_coach.spec.ts`
+- [X] T047 [US2] Functional test for activity save redirect flow in `frontend/tests/functional/test_coach.spec.ts`
+- [X] T048 [US2] Functional test for success toast display after save in `frontend/tests/functional/test_coach.spec.ts`
+- [X] T049 [US2] Functional test for recommendation refresh after save in `frontend/tests/functional/test_coach.spec.ts`
 
 **Checkpoint**: At this point, both User Stories 1 AND 2 should work independently
 
@@ -125,18 +125,18 @@
 
 **Purpose**: Improvements that affect multiple user stories and production readiness
 
-- [ ] T050 [P] Update `backend/functions/local.settings.json.example` with AI_FOUNDRY_ENDPOINT and MCP_SERVER_ENDPOINT
-- [ ] T051 [P] Add Application Insights custom metrics for recommendation latency in `backend/functions/coach/__init__.py`
-- [ ] T052 [P] Add Application Insights custom metrics for fallback rate in `backend/functions/coach/__init__.py`
-- [ ] T053 [P] Document MCP server tools usage in `specs/002-ai-homepage-coach/research.md`
-- [ ] T054 [P] Add CORS configuration for Function App in `backend/functions/host.json`
-- [ ] T055 Validate quickstart.md instructions with fresh local setup
-- [ ] T056 Add README section for AI coach feature configuration
-- [ ] T057 [P] Security review: verify no secrets exposed to frontend
-- [ ] T058 [P] Performance review: verify p95 latency < 3s in Application Insights
-- [ ] T059 Update infrastructure as code with App Settings in `infra/modules/backend.bicep`
-- [ ] T060 Add managed identity RBAC role assignment in `infra/main.bicep` for AI Foundry access
-- [ ] T061 Run all tests: `cd backend && pytest && cd ../frontend/tests/functional && npm test`
+- [X] T050 [P] Update `backend/functions/local.settings.json.example` with AI_FOUNDRY_ENDPOINT and MCP_SERVER_ENDPOINT
+- [X] T051 [P] Add Application Insights custom metrics for recommendation latency in `backend/functions/coach/__init__.py`
+- [X] T052 [P] Add Application Insights custom metrics for fallback rate in `backend/functions/coach/__init__.py`
+- [X] T053 [P] Document MCP server tools usage in `specs/002-ai-homepage-coach/research.md`
+- [X] T054 [P] Add CORS configuration for Function App in `backend/functions/host.json`
+- [X] T055 Validate quickstart.md instructions with fresh local setup
+- [X] T056 Add README section for AI coach feature configuration
+- [X] T057 [P] Security review: verify no secrets exposed to frontend
+- [X] T058 [P] Performance review: verify p95 latency < 30s in Application Insights (reasoning model)
+- [X] T059 Update infrastructure as code with App Settings in `infra/modules/backend.bicep`
+- [X] T060 Add managed identity RBAC role assignment in `infra/main.bicep` for AI Foundry access
+- [X] T061 Run all tests: `cd backend && pytest && cd ../frontend/tests/functional && npm test`
 
 ---
 

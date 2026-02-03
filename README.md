@@ -6,6 +6,7 @@ A fitness activity tracking application built with Azure Static Web Apps, Azure 
 
 - **Activity Logging**: Log running, rowing, or rucking activities with duration, distance, optional BPM, and comments
 - **Activity History**: View chronological history with type-based filtering
+- **AI Coach**: Daily AI-generated workout recommendations for half-marathon training
 - **Responsive Design**: PWA-ready, mobile-friendly interface
 - **Secure**: Managed identity authentication, no keys in code
 - **Observable**: Application Insights + Log Analytics integration
@@ -15,6 +16,7 @@ A fitness activity tracking application built with Azure Static Web Apps, Azure 
 - **Frontend**: Azure Static Web App (vanilla JS, responsive)
 - **Backend**: Azure Functions (Python 3.11) with HTTP triggers
 - **Database**: Azure Cosmos DB (NoSQL) with data-plane RBAC
+- **AI**: Azure AI Foundry with GPT-5 mini model + MCP server for Cosmos access
 - **Observability**: Application Insights (frontend & backend) + Log Analytics Workspace
 - **Infrastructure**: Bicep with Azure Verified Modules (AVM)
 
@@ -25,7 +27,8 @@ fit-app/
 ├── backend/
 │   ├── functions/          # Azure Functions endpoints
 │   │   ├── activities/     # CRUD for activities
-│   │   └── shared/         # Validation, Cosmos client, logging
+│   │   ├── coach/          # AI recommendation endpoint
+│   │   └── shared/         # Validation, Cosmos client, AI client, logging
 │   └── tests/              # Unit, integration, contract tests
 ├── frontend/
 │   ├── src/                # Static site code
@@ -82,12 +85,30 @@ Create `backend/functions/local.settings.json`:
     "FUNCTIONS_WORKER_RUNTIME": "python",
     "COSMOS_ENDPOINT": "https://fitapp-dev-cosmos.documents.azure.com:443/",
     "COSMOS_DATABASE_NAME": "fitappdb",
-    "COSMOS_CONTAINER_NAME": "activities"
+    "COSMOS_CONTAINER_NAME": "activities",
+    "AI_FOUNDRY_ENDPOINT": "https://fit-app-resource.services.ai.azure.com/api/projects/fit-app",
+    "AI_FOUNDRY_MODEL": "gpt-5-mini",
+    "MCP_SERVER_ENDPOINT": "https://ca-fitapp-mcp-dev.nicemeadow-fd871464.eastus2.azurecontainerapps.io/mcp"
   }
 }
 ```
 
-**Note**: Never commit `local.settings.json` to source control. Use `.env.example` as a template.
+**Note**: Never commit `local.settings.json` to source control. Use `local.settings.json.example` as a template.
+
+### AI Coach Configuration
+
+The AI coach feature requires:
+
+1. **Azure AI Foundry**: An AI Foundry resource with a deployed GPT-5 mini model
+2. **MCP Server**: A Model Context Protocol server providing Cosmos DB access
+3. **Managed Identity**: Function App identity with RBAC access to AI Foundry
+
+For local development, authenticate via Azure CLI:
+```bash
+az login
+```
+
+The managed identity flows through `DefaultAzureCredential`, using Azure CLI credentials locally and system-assigned identity in Azure.
 
 ## Testing
 
@@ -185,9 +206,18 @@ MIT - See [LICENSE](LICENSE)
 
 ## Quick Reference
 
+### Activity Tracking (Feature 001)
 - **Spec**: `specs/001-activity-tracking/spec.md`
 - **Plan**: `specs/001-activity-tracking/plan.md`
 - **Tasks**: `specs/001-activity-tracking/tasks.md`
 - **Quickstart**: `specs/001-activity-tracking/quickstart.md`
 - **Data Model**: `specs/001-activity-tracking/data-model.md`
 - **API Contracts**: `specs/001-activity-tracking/contracts/`
+
+### AI Homepage Coach (Feature 002)
+- **Spec**: `specs/002-ai-homepage-coach/spec.md`
+- **Plan**: `specs/002-ai-homepage-coach/plan.md`
+- **Tasks**: `specs/002-ai-homepage-coach/tasks.md`
+- **Quickstart**: `specs/002-ai-homepage-coach/quickstart.md`
+- **Research**: `specs/002-ai-homepage-coach/research.md`
+- **API Contracts**: `specs/002-ai-homepage-coach/contracts/`

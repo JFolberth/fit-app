@@ -270,3 +270,153 @@ class TestAllowedTypes:
     def test_allowed_types_set(self):
         """Verify ALLOWED_TYPES contains expected values."""
         assert ALLOWED_TYPES == {"Running", "Rowing", "Rucking"}
+
+
+class TestDistanceCoercion:
+    """Test distance field coercion and optional handling."""
+
+    def test_rowing_with_empty_string_distance(self):
+        """Rowing with empty string distance should succeed (distance becomes None)."""
+        payload = {
+            "type": "Rowing",
+            "duration": 30,
+            "distance": "",
+            "avgBpm": 140,
+        }
+        activity = validate_activity_payload(payload)
+        assert activity.type == "Rowing"
+        assert activity.distance is None
+
+    def test_rowing_with_whitespace_distance(self):
+        """Rowing with whitespace-only distance should succeed."""
+        payload = {
+            "type": "Rowing",
+            "duration": 30,
+            "distance": "   ",
+            "avgBpm": 140,
+        }
+        activity = validate_activity_payload(payload)
+        assert activity.distance is None
+
+    def test_rowing_with_null_distance(self):
+        """Rowing with explicit None distance should succeed."""
+        payload = {
+            "type": "Rowing",
+            "duration": 30,
+            "distance": None,
+            "avgBpm": 140,
+        }
+        activity = validate_activity_payload(payload)
+        assert activity.distance is None
+
+    def test_distance_accepts_decimal_values(self):
+        """Distance should accept decimal values like 3.14."""
+        payload = {
+            "type": "Running",
+            "duration": 30,
+            "distance": 3.14,
+            "avgBpm": 150,
+        }
+        activity = validate_activity_payload(payload)
+        assert activity.distance == 3.14
+
+    def test_distance_accepts_decimal_string(self):
+        """Distance should accept decimal values as strings."""
+        payload = {
+            "type": "Running",
+            "duration": 30,
+            "distance": "5.25",
+            "avgBpm": 150,
+        }
+        activity = validate_activity_payload(payload)
+        assert activity.distance == 5.25
+
+    def test_distance_invalid_string_rejected(self):
+        """Distance with non-numeric string should be rejected."""
+        payload = {
+            "type": "Running",
+            "duration": 30,
+            "distance": "abc",
+            "avgBpm": 150,
+        }
+        with pytest.raises(ValidationError) as exc:
+            validate_activity_payload(payload)
+        assert "valid number" in str(exc.value)
+
+    def test_running_empty_distance_rejected(self):
+        """Running with empty distance should be rejected (distance required)."""
+        payload = {
+            "type": "Running",
+            "duration": 30,
+            "distance": "",
+            "avgBpm": 150,
+        }
+        with pytest.raises(ValidationError) as exc:
+            validate_activity_payload(payload)
+        assert "Distance is required" in str(exc.value)
+
+
+class TestDurationCoercion:
+    """Test duration field coercion for seconds support."""
+
+    def test_duration_accepts_decimal_minutes(self):
+        """Duration should accept decimal values for seconds (e.g., 30.5 = 30min 30sec)."""
+        payload = {
+            "type": "Rowing",
+            "duration": 30.5,
+            "avgBpm": 140,
+        }
+        activity = validate_activity_payload(payload)
+        assert activity.duration == 30.5
+
+    def test_duration_accepts_small_decimals(self):
+        """Duration should accept values like 0.5 (30 seconds)."""
+        payload = {
+            "type": "Rowing",
+            "duration": 0.5,
+            "avgBpm": 140,
+        }
+        activity = validate_activity_payload(payload)
+        assert activity.duration == 0.5
+
+    def test_duration_accepts_precise_seconds(self):
+        """Duration should accept precise values like 45.75 (45min 45sec)."""
+        payload = {
+            "type": "Rowing",
+            "duration": 45.75,
+            "avgBpm": 140,
+        }
+        activity = validate_activity_payload(payload)
+        assert activity.duration == 45.75
+
+    def test_duration_as_string(self):
+        """Duration should accept string values and convert."""
+        payload = {
+            "type": "Rowing",
+            "duration": "30.25",
+            "avgBpm": 140,
+        }
+        activity = validate_activity_payload(payload)
+        assert activity.duration == 30.25
+
+    def test_duration_empty_string_rejected(self):
+        """Duration with empty string should be rejected."""
+        payload = {
+            "type": "Rowing",
+            "duration": "",
+            "avgBpm": 140,
+        }
+        with pytest.raises(ValidationError) as exc:
+            validate_activity_payload(payload)
+        assert "duration is required" in str(exc.value)
+
+    def test_duration_invalid_string_rejected(self):
+        """Duration with non-numeric string should be rejected."""
+        payload = {
+            "type": "Rowing",
+            "duration": "thirty",
+            "avgBpm": 140,
+        }
+        with pytest.raises(ValidationError) as exc:
+            validate_activity_payload(payload)
+        assert "valid number" in str(exc.value)

@@ -30,3 +30,13 @@ param backendAppInsightsName = 'fitapp-dev-backend-appi'
 
 // High availability (false for dev)
 param zoneRedundant = false
+
+// AI Coach configuration
+param aiFoundryEndpoint = 'https://fit-app-resource.services.ai.azure.com/api/projects/fit-app'
+param aiFoundryModel = 'gpt-5-mini'
+param mcpServerEndpoint = 'https://ca-fitapp-mcp-dev.nicemeadow-fd871464.eastus2.azurecontainerapps.io/mcp'
+
+// AI Foundry RBAC - provide the resource ID of the AI Foundry resource for RBAC assignment
+// Format: /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.CognitiveServices/accounts/{accountName}
+// Leave empty to skip RBAC assignment (useful if assigning manually or via different process)
+param aiFoundryResourceId = ''

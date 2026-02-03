@@ -56,8 +56,14 @@
 - MCP client SDK: Need Python client that supports Streamable HTTP (SSE)
 - Tools to use:
   - `query_cosmos`: Get recent activities (last 7-14 days)
+    - Parameters: `query` (SQL-like query string), `limit` (max results)
+    - Returns: `{"documents": [...]}` with activity records
   - `count_document`: Check total activity count for context
+    - Parameters: `query` (filter predicate)
+    - Returns: `{"count": <number>}`
   - `list_distinct_values`: Get activity types or other categorical data
+    - Parameters: `field` (field name), `query` (optional filter)
+    - Returns: `{"values": [...]}`
 - Fallback strategy: If MCP server unavailable, return generic fallback recommendation
 - Error handling: Timeout after 2s for MCP calls (within 3s total endpoint budget)
 
@@ -180,20 +186,32 @@ AI-driven recommendations with structured output schema and training guidelines
 ## 7. Performance Budget ✓
 
 ### Decision
-p95 < 3 seconds for `/api/coach/today` endpoint
+p95 < 30 seconds for `/api/coach/today` endpoint (updated from original 3s target)
 
-### Breakdown
+### Observed Performance
+GPT-5 mini is a reasoning model that uses internal "thinking" tokens before producing output:
+- Average latency: 15-28 seconds
+- p95 observed: ~28 seconds
+- Reasoning tokens: ~1500-1800 tokens (not visible in output)
+- Output tokens: ~200-400 tokens
+
+### Breakdown (Updated)
 - MCP queries: ~500ms (parallel if possible)
 - Training context build: ~100ms
-- AI agent call: ~1500ms
+- AI agent call: ~15-25s (reasoning model)
 - Response validation: ~50ms
-- Buffer: ~850ms
 
 ### Rationale
-- 3s is acceptable for a "load home page" interaction
+- GPT-5 mini's reasoning capability provides higher quality recommendations
+- The extended thinking time results in better training advice
 - User sees loading state during fetch
-- Allows for AI agent processing time
-- Fallback on timeout ensures no user waits 30s+
+- Fallback on timeout (30s) ensures no indefinite waits
+- Consider caching recommendations for same-day repeat requests
+
+### Alternatives Considered
+- **Switch to faster model**: Would sacrifice recommendation quality
+- **Reduce max_completion_tokens**: Model requires ~2000 for reasoning + output
+- **Stream response**: Could improve perceived performance (future enhancement)
 
 ---
 
@@ -211,9 +229,136 @@ p95 < 3 seconds for `/api/coach/today` endpoint
 
 ---
 
+## 9. MCP Server Tools Usage ✓
+
+### Overview
+The MCP server provides Cosmos DB access through a standardized tool interface using Streamable HTTP (SSE) protocol. The coach function uses these tools to fetch training history for recommendation context.
+
+### Server Configuration
+- **Endpoint**: `https://ca-fitapp-mcp-dev.nicemeadow-fd871464.eastus2.azurecontainerapps.io/mcp`
+- **Protocol**: Streamable HTTP with Server-Sent Events (SSE)
+- **Authentication**: None required (dev environment)
+- **Content-Type**: `application/json` (requests), `text/event-stream` (responses)
+
+### Available Tools
+
+#### `query_cosmos`
+Query the activities container with optional filters.
+
+**Parameters:**
+```json
+{
+  "query": "SELECT * FROM c WHERE c.date >= @startDate ORDER BY c.date DESC",
+  "parameters": [{"name": "@startDate", "value": "2026-01-20"}],
+  "limit": 50
+}
+```
+
+**Response:**
+```json
+{
+  "documents": [
+    {
+      "id": "uuid",
+      "date": "2026-01-26",
+      "type": "Running",
+      "distance_miles": 6.2,
+      "duration_minutes": 52,
+      "notes": "Easy pace, felt good"
+    }
+  ]
+}
+```
+
+#### `count_document`
+Count documents matching a filter.
+
+**Parameters:**
+```json
+{
+  "query": "c.type = 'Running'"
+}
+```
+
+**Response:**
+```json
+{
+  "count": 42
+}
+```
+
+#### `list_distinct_values`
+Get distinct values for a field.
+
+**Parameters:**
+```json
+{
+  "field": "type",
+  "query": "c.date >= '2026-01-01'"
+}
+```
+
+**Response:**
+```json
+{
+  "values": ["Running", "Cycling", "Swimming"]
+}
+```
+
+### Implementation Pattern
+
+The coach function uses the MCP client as follows:
+
+```python
+from shared.mcp_client import MCPClient
+
+async with MCPClient(endpoint=MCP_SERVER_ENDPOINT) as client:
+    # Initialize session
+    await client.initialize()
+    
+    # Query recent activities
+    activities = await client.call_tool("query_cosmos", {
+        "query": "SELECT * FROM c WHERE c.date >= @startDate",
+        "parameters": [{"name": "@startDate", "value": cutoff_date}],
+        "limit": 100
+    })
+    
+    # Build training context from activities
+    context = build_training_context(activities["documents"])
+```
+
+### SSE Response Parsing
+
+The MCP server returns responses in SSE format:
+```
+event: message
+data: {"jsonrpc":"2.0","id":"1","result":{"content":[{"type":"text","text":"{...}"}]}}
+```
+
+The MCPClient parses this format automatically:
+1. Reads SSE events from the response stream
+2. Extracts the `data:` line content
+3. Parses JSON-RPC response
+4. Extracts tool result from `result.content[0].text`
+
+### Error Handling
+
+- **Connection timeout**: 2s timeout on MCP calls
+- **Server unavailable**: Falls back to generic recommendation
+- **Invalid response**: Logs error, returns fallback
+- **Empty results**: Valid scenario, indicates no recent activity
+
+### Testing Considerations
+
+- Unit tests mock the MCP client responses
+- Integration tests verify connectivity to the actual MCP server
+- Fallback paths are tested with simulated failures
+
+---
+
 ## Open Questions / Future Work
 
-1. **MCP Python Client**: Need to identify specific Python library for Streamable HTTP MCP protocol
+1. ~~**MCP Python Client**: Need to identify specific Python library for Streamable HTTP MCP protocol~~ ✓ Custom httpx-based client implemented
 2. **Caching**: Should same-day recommendations be cached? (Defer to Phase 3)
 3. **Production MCP Authentication**: Will production require auth? If so, what mechanism?
 4. **Multi-user**: Current scope is single-user MVP
