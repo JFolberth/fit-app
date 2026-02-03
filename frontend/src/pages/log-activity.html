@@ -152,8 +152,9 @@
       const payload = Object.fromEntries(fd.entries());
       // Coerce numbers - handle empty strings properly
       if (payload.duration) payload.duration = parseFloat(payload.duration);
-      if (payload.distance && payload.distance.trim() !== '') {
-        payload.distance = parseFloat(payload.distance);
+      const distanceValue = String(payload.distance ?? '').trim();
+      if (distanceValue !== '') {
+        payload.distance = parseFloat(distanceValue);
       } else {
         // Remove distance if empty - it's optional for Rowing
         delete payload.distance;
