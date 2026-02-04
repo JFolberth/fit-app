@@ -139,6 +139,100 @@ class MCPClient:
                         continue
         return result
 
+    def _parse_documents_from_result(self, result: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """
+        Parse document data from MCP result.
+        
+        MCP returns results as text in content[0].text or structuredContent.result.
+        The format can be either JSON or key-value text format:
+        
+        Key-value format:
+            Document 1:
+              type: Running
+              duration: 35
+              ...
+        
+        Args:
+            result: Raw MCP tool result
+            
+        Returns:
+            List of parsed document dictionaries
+        """
+        import re
+        
+        # Get the text content from MCP response
+        text_content = ""
+        if "content" in result and result["content"]:
+            for content_item in result["content"]:
+                if content_item.get("type") == "text":
+                    text_content = content_item.get("text", "")
+                    break
+        elif "structuredContent" in result:
+            text_content = result["structuredContent"].get("result", "")
+        
+        if not text_content:
+            return []
+        
+        documents = []
+        
+        # First, try to extract JSON objects (for backwards compatibility)
+        json_pattern = r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}'
+        json_matches = re.findall(json_pattern, text_content, re.DOTALL)
+        
+        for match in json_matches:
+            try:
+                doc = json.loads(match)
+                if "type" in doc or "date" in doc or "id" in doc:
+                    documents.append(doc)
+            except json.JSONDecodeError:
+                continue
+        
+        # If JSON parsing found documents, return them
+        if documents:
+            return documents
+        
+        # Otherwise, parse key-value text format
+        # Split by "Document N:" markers
+        doc_sections = re.split(r'\nDocument \d+:\n', text_content)
+        
+        for section in doc_sections:
+            if not section.strip():
+                continue
+            
+            doc = {}
+            for line in section.strip().split('\n'):
+                line = line.strip()
+                if not line or line.startswith('--') or line.startswith('Results'):
+                    continue
+                
+                # Parse "key: value" format
+                if ':' in line:
+                    key, _, value = line.partition(':')
+                    key = key.strip()
+                    value = value.strip()
+                    
+                    # Skip Cosmos metadata fields
+                    if key.startswith('_'):
+                        continue
+                    
+                    # Convert values to appropriate types
+                    if value == 'None' or value == '':
+                        doc[key] = None
+                    elif value.isdigit():
+                        doc[key] = int(value)
+                    else:
+                        # Try to parse as float
+                        try:
+                            doc[key] = float(value)
+                        except ValueError:
+                            doc[key] = value
+            
+            # Only add if it looks like an activity document
+            if doc and ("type" in doc or "date" in doc or "id" in doc):
+                documents.append(doc)
+        
+        return documents
+
     def _call_tool(self, tool_name: str, arguments: Dict[str, Any]) -> Any:
         """
         Call an MCP tool and return the result.
@@ -228,12 +322,12 @@ class MCPClient:
         Returns:
             List of activity documents
         """
+        # Use TOP clause in SQL since query_cosmos doesn't have a limit parameter
         result = self._call_tool("query_cosmos", {
-            "query": f"SELECT * FROM c WHERE c.date >= '{start_date.isoformat()}' AND c.date <= '{end_date.isoformat()}' ORDER BY c.date DESC",
-            "limit": limit
+            "query": f"SELECT TOP {limit} * FROM c WHERE c.date >= '{start_date.isoformat()}' AND c.date <= '{end_date.isoformat()}' ORDER BY c.date DESC"
         })
         
-        return result.get("documents", [])
+        return self._parse_documents_from_result(result)
     
     def count_activities(self, start_date: date, end_date: date) -> int:
         """
@@ -246,11 +340,26 @@ class MCPClient:
         Returns:
             Number of activities
         """
-        result = self._call_tool("count_document", {
+        # Use count_documents tool (no parameters needed for default container)
+        # Then filter by querying and counting results
+        result = self._call_tool("query_cosmos", {
             "query": f"SELECT VALUE COUNT(1) FROM c WHERE c.date >= '{start_date.isoformat()}' AND c.date <= '{end_date.isoformat()}'"
         })
         
-        return result.get("count", 0)
+        # Parse count from text response
+        text_content = ""
+        if "content" in result and result["content"]:
+            for content_item in result["content"]:
+                if content_item.get("type") == "text":
+                    text_content = content_item.get("text", "")
+                    break
+        elif "structuredContent" in result:
+            text_content = result["structuredContent"].get("result", "")
+        
+        # Extract number from text like "Results:\n...\n  1: 15"
+        import re
+        match = re.search(r'(\d+)', text_content)
+        return int(match.group(1)) if match else 0
     
     def get_activity_types(self, start_date: date, end_date: date) -> List[str]:
         """
@@ -263,12 +372,31 @@ class MCPClient:
         Returns:
             List of distinct activity type strings
         """
+        # Use list_distinct_values tool with field_name parameter
         result = self._call_tool("list_distinct_values", {
-            "field": "type",
-            "query": f"c.date >= '{start_date.isoformat()}' AND c.date <= '{end_date.isoformat()}'"
+            "field_name": "type"
         })
         
-        return result.get("values", [])
+        # Parse values from text response
+        text_content = ""
+        if "content" in result and result["content"]:
+            for content_item in result["content"]:
+                if content_item.get("type") == "text":
+                    text_content = content_item.get("text", "")
+                    break
+        elif "structuredContent" in result:
+            text_content = result["structuredContent"].get("result", "")
+        
+        # Extract values from text like "Distinct values for 'type':\n- 'Running'\n- 'Rowing'"
+        values = []
+        for line in text_content.split('\n'):
+            line = line.strip()
+            if line.startswith('- '):
+                # Remove leading "- " and strip any quotes
+                value = line[2:].strip().strip("'\"")
+                values.append(value)
+        
+        return values
 
 
 def get_mcp_client() -> MCPClient:
