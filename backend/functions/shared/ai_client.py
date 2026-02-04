@@ -34,7 +34,7 @@ Guidelines:
 4. Weekly long run: Recommend at least one longer endurance run per week
 5. Recovery: After hard sessions or long runs, prioritize easy/rest days
 6. Progression: Gradual volume increase (10% rule)
-7. Build a solid cardio base is IMPORTANT in regards to maintaining a steady acceptable heart rate.
+7. Building a solid cardio base is IMPORTANT in regards to maintaining a steady acceptable heart rate.
 8. Activities should be chosen from running, rowing, and rucking.
 9. When providing a workout routine provide an alternate.
 10. Be sure to check notes in regards to any context.
