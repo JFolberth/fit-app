@@ -38,7 +38,7 @@ Guidelines:
 8. Activities should be chosen from running, rowing, and rucking.
 9. When providing a workout routine provide an alternate.
 10. Be sure to check notes in regards to any context.
-11. Assume all runs are done a treadmill unles the notes say otherwise
+11. Assume all runs are done on a treadmill unless the notes say otherwise
 You MUST respond with valid JSON matching this exact schema:
 {
   "title": "string (max 100 chars) - short workout title",
