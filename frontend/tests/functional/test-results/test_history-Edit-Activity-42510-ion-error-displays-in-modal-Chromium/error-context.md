@@ -1,0 +1,81 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e3]:
+      - link "FitApp" [ref=e4] [cursor=pointer]:
+        - /url: ../index.html
+        - img [ref=e5]
+        - text: FitApp
+      - generic [ref=e8]:
+        - link "Log Activity" [ref=e9] [cursor=pointer]:
+          - /url: log-activity.html
+        - link "History" [ref=e10] [cursor=pointer]:
+          - /url: history.html
+  - main [ref=e11]:
+    - generic [ref=e12]:
+      - heading "Activity History" [level=1] [ref=e13]
+      - paragraph [ref=e14]: Review your past workouts and track your progress
+    - generic [ref=e15]:
+      - button "All Activities" [ref=e16] [cursor=pointer]
+      - button "🏃 Running" [ref=e17] [cursor=pointer]
+      - button "🚣 Rowing" [ref=e18] [cursor=pointer]
+      - button "🎒 Rucking" [ref=e19] [cursor=pointer]
+    - list [ref=e20]:
+      - listitem [ref=e21]:
+        - generic [ref=e22]:
+          - generic [ref=e23]:
+            - generic [ref=e24]: 🏃
+            - text: Running
+          - generic [ref=e25]: Tue, Jan 20
+          - generic [ref=e26]:
+            - button "Edit activity" [ref=e27] [cursor=pointer]:
+              - img [ref=e28]
+            - button "Delete activity" [ref=e31] [cursor=pointer]:
+              - img [ref=e32]
+        - generic [ref=e34]:
+          - generic [ref=e35]:
+            - generic [ref=e36]: "30"
+            - generic [ref=e37]: Minutes
+          - generic [ref=e38]:
+            - generic [ref=e39]: "3.1"
+            - generic [ref=e40]: Miles
+          - generic [ref=e41]:
+            - generic [ref=e42]: "140"
+            - generic [ref=e43]: Avg BPM
+    - dialog "Edit Activity" [ref=e44]:
+      - generic [ref=e45]:
+        - generic [ref=e46]:
+          - heading "Edit Activity" [level=2] [ref=e47]
+          - button "Close" [ref=e48] [cursor=pointer]:
+            - img [ref=e49]
+        - generic [ref=e52]:
+          - generic [ref=e54]:
+            - generic [ref=e55]:
+              - generic [ref=e56]: Activity Type
+              - combobox "Activity Type" [ref=e57] [cursor=pointer]:
+                - option "Running" [selected]
+                - option "Rowing"
+                - option "Rucking"
+            - generic [ref=e58]:
+              - generic [ref=e59]:
+                - generic [ref=e60]: Duration (min)
+                - spinbutton "Duration (min)" [ref=e61]: "30"
+              - generic [ref=e62]:
+                - generic [ref=e63]: Distance (miles)
+                - spinbutton "Distance (miles)" [ref=e64]: "3.1"
+            - generic [ref=e65]:
+              - generic [ref=e66]:
+                - generic [ref=e67]: Avg Heart Rate (BPM)
+                - spinbutton "Avg Heart Rate (BPM)" [active] [ref=e68]: "10"
+              - generic [ref=e69]:
+                - generic [ref=e70]: Date
+                - textbox "Date" [ref=e71]: 2026-01-20
+            - generic [ref=e72]:
+              - generic [ref=e73]: Comments (optional)
+              - textbox "Comments (optional)" [ref=e74]
+          - generic [ref=e75]:
+            - button "Cancel" [ref=e76] [cursor=pointer]
+            - button "Save Changes" [ref=e77] [cursor=pointer]
+```
