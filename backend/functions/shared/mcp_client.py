@@ -358,8 +358,14 @@ class MCPClient:
         
         # Extract number from text like "Results:\n...\n  1: 15"
         import re
-        match = re.search(r'(\d+)', text_content)
-        return int(match.group(1)) if match else 0
+        # Prefer the number that appears after a colon (e.g., "1: 15" -> 15)
+        match = re.search(r':\s*(\d+)\b', text_content)
+        if match:
+            return int(match.group(1))
+
+        # Fallback: if no colon-based match, take the last number in the text
+        numbers = re.findall(r'(\d+)', text_content)
+        return int(numbers[-1]) if numbers else 0
     
     def get_activity_types(self, start_date: date, end_date: date) -> List[str]:
         """
