@@ -340,8 +340,8 @@ class MCPClient:
         Returns:
             Number of activities
         """
-        # Use count_documents tool (no parameters needed for default container)
-        # Then filter by querying and counting results
+        # Use query_cosmos with a COUNT aggregate to get the number of matching activities
+        # directly from Cosmos DB for the given date range
         result = self._call_tool("query_cosmos", {
             "query": f"SELECT VALUE COUNT(1) FROM c WHERE c.date >= '{start_date.isoformat()}' AND c.date <= '{end_date.isoformat()}'"
         })
