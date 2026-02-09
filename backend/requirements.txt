@@ -17,7 +17,7 @@ openai==1.52.2
 httpx==0.28.1
 pydantic==2.9.2
 pytest==8.3.4
-pytest-cov==6.0.0
+pytest-cov==7.0.0
 pytest-asyncio==0.23.8
 bandit==1.7.10
 pip-audit==2.7.3
