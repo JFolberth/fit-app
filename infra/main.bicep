@@ -30,6 +30,9 @@ param cosmosActivitiesContainerName string
 @description('Static Web App name')
 param staticWebAppName string
 
+@description('SKU for Static Web App (Standard required for Key Vault references)')
+param staticWebAppSku string = 'Standard'
+
 @description('App Service Plan name')
 param appServicePlanName string
 
@@ -50,6 +53,19 @@ param appServicePlanSku string
 
 @description('Enable zone redundancy')
 param zoneRedundant bool
+
+@description('Key Vault name for frontend auth secrets')
+param keyVaultName string
+
+@description('Azure AD application (client) ID for SWA authentication')
+param aadClientId string
+
+@description('Azure AD app registration display name')
+param aadAppDisplayName string
+
+@secure()
+@description('Azure AD client secret for SWA authentication')
+param aadClientSecret string
 
 @description('Azure AI Foundry endpoint URL')
 param aiFoundryEndpoint string = 'https://fit-app-resource.services.ai.azure.com/api/projects/fit-app'
@@ -145,8 +161,13 @@ module frontend 'modules/frontend.bicep' = {
       component: 'frontend'
     })
     staticWebAppName: staticWebAppName
+    staticWebAppSku: staticWebAppSku
     appInsightsName: frontendAppInsightsName
     logAnalyticsWorkspaceId: observability.outputs.logAnalyticsWorkspaceId
+    keyVaultName: keyVaultName
+    aadClientId: aadClientId
+    aadAppDisplayName: aadAppDisplayName
+    aadClientSecret: aadClientSecret
   }
 }
 
@@ -250,3 +271,9 @@ output frontendAppInsightsConnectionString string = frontend.outputs.appInsights
 
 @description('Backend Application Insights connection string')
 output backendAppInsightsConnectionString string = backend.outputs.appInsightsConnectionString
+
+@description('Key Vault name')
+output keyVaultName string = frontend.outputs.keyVaultName
+
+@description('Key Vault URI')
+output keyVaultUri string = frontend.outputs.keyVaultUri

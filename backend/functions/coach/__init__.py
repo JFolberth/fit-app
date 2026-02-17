@@ -18,6 +18,7 @@ from shared.ai_client import AIClient, AIClientError, get_ai_client
 from shared.mcp_client import MCPClient, MCPClientError, get_mcp_client
 from shared.models import DailyRecommendation, WorkoutDetails, get_fallback_recommendation
 from shared.training_context import build_training_context
+from shared.auth import get_user_identity
 
 # Configuration from environment variables
 AI_FOUNDRY_ENDPOINT = os.environ.get(
@@ -64,6 +65,15 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     Always returns 200 with either an AI recommendation or a fallback.
     """
     start_time = time.perf_counter()
+    
+    # Extract authenticated user identity
+    user = get_user_identity(req)
+    if not user:
+        return func.HttpResponse(
+            json.dumps({"error": "Authentication required"}),
+            status_code=401,
+            headers={"Content-Type": "application/json"},
+        )
     
     # Generate correlation ID for request tracing
     correlation_id = req.headers.get("x-correlation-id") or str(uuid.uuid4())

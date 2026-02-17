@@ -81,6 +81,7 @@ async function request(path, options = {}) {
   const url = `${API_BASE}${path}`;
   const res = await fetch(url, {
     headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+    credentials: 'include',
     ...options,
   });
   if (!res.ok) {

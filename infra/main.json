@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.40.2.10011",
-      "templateHash": "10062134017424988636"
+      "templateHash": "8749615534771007694"
     }
   },
   "parameters": {
@@ -62,6 +62,13 @@
         "description": "Static Web App name"
       }
     },
+    "staticWebAppSku": {
+      "type": "string",
+      "defaultValue": "Standard",
+      "metadata": {
+        "description": "SKU for Static Web App (Standard required for Key Vault references)"
+      }
+    },
     "appServicePlanName": {
       "type": "string",
       "metadata": {
@@ -102,6 +109,65 @@
       "type": "bool",
       "metadata": {
         "description": "Enable zone redundancy"
+      }
+    },
+    "keyVaultName": {
+      "type": "string",
+      "metadata": {
+        "description": "Key Vault name for frontend auth secrets"
+      }
+    },
+    "aadClientId": {
+      "type": "string",
+      "metadata": {
+        "description": "Azure AD application (client) ID for SWA authentication"
+      }
+    },
+    "aadAppDisplayName": {
+      "type": "string",
+      "metadata": {
+        "description": "Azure AD app registration display name"
+      }
+    },
+    "aadClientSecret": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Azure AD client secret for SWA authentication"
+      }
+    },
+    "aiFoundryEndpoint": {
+      "type": "string",
+      "defaultValue": "https://fit-app-resource.services.ai.azure.com/api/projects/fit-app",
+      "metadata": {
+        "description": "Azure AI Foundry endpoint URL"
+      }
+    },
+    "aiFoundryModel": {
+      "type": "string",
+      "defaultValue": "gpt-5-mini",
+      "metadata": {
+        "description": "Azure AI Foundry model name"
+      }
+    },
+    "mcpServerEndpoint": {
+      "type": "string",
+      "defaultValue": "https://ca-fitapp-mcp-dev.nicemeadow-fd871464.eastus2.azurecontainerapps.io/mcp",
+      "metadata": {
+        "description": "MCP Server endpoint URL"
+      }
+    },
+    "aiFoundryResourceGroup": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Azure AI Foundry resource group name (optional - for RBAC assignment)"
+      }
+    },
+    "aiFoundryAccountName": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Azure AI Foundry account name (optional - for RBAC assignment)"
       }
     }
   },
@@ -3237,7 +3303,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.40.2.10011",
-              "templateHash": "9035541220432123021"
+              "templateHash": "11946873060200218226"
             }
           },
           "parameters": {
@@ -3309,6 +3375,11 @@
                   },
                   "minimumTlsVersion": {
                     "value": "Tls12"
+                  },
+                  "networkRestrictions": {
+                    "value": {
+                      "publicNetworkAccess": "Enabled"
+                    }
                   },
                   "locations": {
                     "value": [
@@ -7141,21 +7212,37 @@
           "staticWebAppName": {
             "value": "[parameters('staticWebAppName')]"
           },
+          "staticWebAppSku": {
+            "value": "[parameters('staticWebAppSku')]"
+          },
           "appInsightsName": {
             "value": "[parameters('frontendAppInsightsName')]"
           },
           "logAnalyticsWorkspaceId": {
             "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, format('rg-{0}-{1}-monitoring', parameters('baseName'), parameters('env'))), 'Microsoft.Resources/deployments', 'observability-deployment'), '2025-04-01').outputs.logAnalyticsWorkspaceId.value]"
+          },
+          "keyVaultName": {
+            "value": "[parameters('keyVaultName')]"
+          },
+          "aadClientId": {
+            "value": "[parameters('aadClientId')]"
+          },
+          "aadAppDisplayName": {
+            "value": "[parameters('aadAppDisplayName')]"
+          },
+          "aadClientSecret": {
+            "value": "[parameters('aadClientSecret')]"
           }
         },
         "template": {
           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "languageVersion": "2.0",
           "contentVersion": "1.0.0.0",
           "metadata": {
             "_generator": {
               "name": "bicep",
               "version": "0.40.2.10011",
-              "templateHash": "16309234682470437392"
+              "templateHash": "17515686104627258986"
             }
           },
           "parameters": {
@@ -7188,10 +7275,132 @@
               "metadata": {
                 "description": "Log Analytics Workspace resource ID for diagnostics"
               }
+            },
+            "staticWebAppSku": {
+              "type": "string",
+              "defaultValue": "Standard",
+              "metadata": {
+                "description": "SKU for Static Web App (Standard required for managed identity / Key Vault references)"
+              }
+            },
+            "keyVaultName": {
+              "type": "string",
+              "metadata": {
+                "description": "Key Vault name for storing authentication secrets"
+              }
+            },
+            "aadClientId": {
+              "type": "string",
+              "metadata": {
+                "description": "Azure AD application (client) ID for SWA authentication"
+              }
+            },
+            "aadAppDisplayName": {
+              "type": "string",
+              "metadata": {
+                "description": "Azure AD app registration display name"
+              }
+            },
+            "aadClientSecret": {
+              "type": "securestring",
+              "metadata": {
+                "description": "Azure AD client secret for SWA authentication"
+              }
             }
           },
-          "resources": [
-            {
+          "imports": {
+            "microsoftGraphV1_0": {
+              "provider": "MicrosoftGraph",
+              "version": "1.0.0"
+            }
+          },
+          "resources": {
+            "keyVault": {
+              "type": "Microsoft.KeyVault/vaults",
+              "apiVersion": "2023-07-01",
+              "name": "[parameters('keyVaultName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "sku": {
+                  "family": "A",
+                  "name": "standard"
+                },
+                "tenantId": "[subscription().tenantId]",
+                "enableRbacAuthorization": true,
+                "enableSoftDelete": true,
+                "softDeleteRetentionInDays": 90,
+                "enabledForDeployment": false,
+                "enabledForDiskEncryption": false,
+                "enabledForTemplateDeployment": false
+              }
+            },
+            "aadClientSecretKv": {
+              "type": "Microsoft.KeyVault/vaults/secrets",
+              "apiVersion": "2023-07-01",
+              "name": "[format('{0}/{1}', parameters('keyVaultName'), 'AAD-CLIENT-SECRET')]",
+              "properties": {
+                "value": "[parameters('aadClientSecret')]"
+              },
+              "dependsOn": [
+                "keyVault"
+              ]
+            },
+            "swaKeyVaultRoleAssignment": {
+              "type": "Microsoft.Authorization/roleAssignments",
+              "apiVersion": "2022-04-01",
+              "scope": "[resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName'))]",
+              "name": "[guid(resourceGroup().id, parameters('staticWebAppName'), 'key-vault-secrets-user')]",
+              "properties": {
+                "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '4633458b-17de-408a-b874-0445c86b69e6')]",
+                "principalId": "[reference('staticWebApp').outputs.systemAssignedMIPrincipalId.value]",
+                "principalType": "ServicePrincipal"
+              },
+              "dependsOn": [
+                "keyVault",
+                "staticWebApp"
+              ]
+            },
+            "existingSwa": {
+              "existing": true,
+              "type": "Microsoft.Web/staticSites",
+              "apiVersion": "2024-04-01",
+              "name": "[parameters('staticWebAppName')]"
+            },
+            "swaAppSettings": {
+              "type": "Microsoft.Web/staticSites/config",
+              "apiVersion": "2024-04-01",
+              "name": "[format('{0}/{1}', parameters('staticWebAppName'), 'appsettings')]",
+              "properties": {
+                "AAD_CLIENT_ID": "[parameters('aadClientId')]",
+                "AAD_CLIENT_SECRET": "[format('@Microsoft.KeyVault(SecretUri={0})', reference('aadClientSecretKv').secretUri)]"
+              },
+              "dependsOn": [
+                "aadClientSecretKv",
+                "staticWebApp",
+                "swaKeyVaultRoleAssignment"
+              ]
+            },
+            "aadAppRegistration": {
+              "import": "microsoftGraphV1_0",
+              "type": "Microsoft.Graph/applications@v1.0",
+              "properties": {
+                "uniqueName": "[parameters('aadClientId')]",
+                "displayName": "[parameters('aadAppDisplayName')]",
+                "web": {
+                  "implicitGrantSettings": {
+                    "enableIdTokenIssuance": true
+                  },
+                  "redirectUris": [
+                    "[format('https://{0}/.auth/login/aad/callback', reference('staticWebApp').outputs.defaultHostname.value)]"
+                  ]
+                }
+              },
+              "dependsOn": [
+                "staticWebApp"
+              ]
+            },
+            "appInsights": {
               "type": "Microsoft.Resources/deployments",
               "apiVersion": "2025-04-01",
               "name": "frontendAppInsights-deployment",
@@ -7941,7 +8150,7 @@
                 }
               }
             },
-            {
+            "staticWebApp": {
               "type": "Microsoft.Resources/deployments",
               "apiVersion": "2025-04-01",
               "name": "staticWebApp-deployment",
@@ -7959,6 +8168,14 @@
                   },
                   "tags": {
                     "value": "[parameters('tags')]"
+                  },
+                  "sku": {
+                    "value": "[parameters('staticWebAppSku')]"
+                  },
+                  "managedIdentities": {
+                    "value": {
+                      "systemAssigned": true
+                    }
                   }
                 },
                 "template": {
@@ -13125,35 +13342,49 @@
                 }
               }
             }
-          ],
+          },
           "outputs": {
             "staticWebAppUrl": {
               "type": "string",
               "metadata": {
                 "description": "Static Web App default hostname"
               },
-              "value": "[reference(resourceId('Microsoft.Resources/deployments', 'staticWebApp-deployment'), '2025-04-01').outputs.defaultHostname.value]"
+              "value": "[reference('staticWebApp').outputs.defaultHostname.value]"
             },
             "staticWebAppId": {
               "type": "string",
               "metadata": {
                 "description": "Static Web App resource ID"
               },
-              "value": "[reference(resourceId('Microsoft.Resources/deployments', 'staticWebApp-deployment'), '2025-04-01').outputs.resourceId.value]"
+              "value": "[reference('staticWebApp').outputs.resourceId.value]"
             },
             "appInsightsConnectionString": {
               "type": "string",
               "metadata": {
                 "description": "Frontend Application Insights connection string"
               },
-              "value": "[reference(resourceId('Microsoft.Resources/deployments', 'frontendAppInsights-deployment'), '2025-04-01').outputs.connectionString.value]"
+              "value": "[reference('appInsights').outputs.connectionString.value]"
             },
             "appInsightsInstrumentationKey": {
               "type": "string",
               "metadata": {
                 "description": "Frontend Application Insights instrumentation key"
               },
-              "value": "[reference(resourceId('Microsoft.Resources/deployments', 'frontendAppInsights-deployment'), '2025-04-01').outputs.instrumentationKey.value]"
+              "value": "[reference('appInsights').outputs.instrumentationKey.value]"
+            },
+            "keyVaultName": {
+              "type": "string",
+              "metadata": {
+                "description": "Key Vault name"
+              },
+              "value": "[parameters('keyVaultName')]"
+            },
+            "keyVaultUri": {
+              "type": "string",
+              "metadata": {
+                "description": "Key Vault URI"
+              },
+              "value": "[reference('keyVault').vaultUri]"
             }
           }
         }
@@ -13203,6 +13434,15 @@
           },
           "cosmosActivitiesContainerName": {
             "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, format('rg-{0}-{1}-cosmos', parameters('baseName'), parameters('env'))), 'Microsoft.Resources/deployments', 'data-deployment'), '2025-04-01').outputs.cosmosActivitiesContainerName.value]"
+          },
+          "aiFoundryEndpoint": {
+            "value": "[parameters('aiFoundryEndpoint')]"
+          },
+          "aiFoundryModel": {
+            "value": "[parameters('aiFoundryModel')]"
+          },
+          "mcpServerEndpoint": {
+            "value": "[parameters('mcpServerEndpoint')]"
           }
         },
         "template": {
@@ -13212,7 +13452,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.40.2.10011",
-              "templateHash": "350984484639122484"
+              "templateHash": "11322771902433921641"
             }
           },
           "parameters": {
@@ -13274,6 +13514,27 @@
               "type": "string",
               "metadata": {
                 "description": "Cosmos DB activities container name"
+              }
+            },
+            "aiFoundryEndpoint": {
+              "type": "string",
+              "defaultValue": "https://fit-app-resource.services.ai.azure.com/api/projects/fit-app",
+              "metadata": {
+                "description": "Azure AI Foundry endpoint URL"
+              }
+            },
+            "aiFoundryModel": {
+              "type": "string",
+              "defaultValue": "gpt-5-mini",
+              "metadata": {
+                "description": "Azure AI Foundry model name"
+              }
+            },
+            "mcpServerEndpoint": {
+              "type": "string",
+              "defaultValue": "https://ca-fitapp-mcp-dev.nicemeadow-fd871464.eastus2.azurecontainerapps.io/mcp",
+              "metadata": {
+                "description": "MCP Server endpoint URL"
               }
             }
           },
@@ -14759,6 +15020,14 @@
                     "value": {
                       "ftpsState": "Disabled",
                       "minTlsVersion": "1.2",
+                      "cors": {
+                        "allowedOrigins": [
+                          "https://*.azurestaticapps.net",
+                          "http://localhost:4280",
+                          "http://127.0.0.1:4280"
+                        ],
+                        "supportCredentials": true
+                      },
                       "appSettings": [
                         {
                           "name": "APPLICATIONINSIGHTS_CONNECTION_STRING",
@@ -14783,6 +15052,18 @@
                         {
                           "name": "COSMOS_PARTITION_KEY",
                           "value": "type"
+                        },
+                        {
+                          "name": "AI_FOUNDRY_ENDPOINT",
+                          "value": "[parameters('aiFoundryEndpoint')]"
+                        },
+                        {
+                          "name": "AI_FOUNDRY_MODEL",
+                          "value": "[parameters('aiFoundryModel')]"
+                        },
+                        {
+                          "name": "MCP_SERVER_ENDPOINT",
+                          "value": "[parameters('mcpServerEndpoint')]"
                         }
                       ]
                     }
@@ -27767,6 +28048,81 @@
         "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, format('rg-{0}-{1}-cosmos', parameters('baseName'), parameters('env'))), 'Microsoft.Resources/deployments', 'data-deployment')]",
         "[subscriptionResourceId('Microsoft.Resources/resourceGroups', format('rg-{0}-{1}-cosmos', parameters('baseName'), parameters('env')))]"
       ]
+    },
+    {
+      "condition": "[and(not(empty(parameters('aiFoundryResourceGroup'))), not(empty(parameters('aiFoundryAccountName'))))]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "ai-foundry-rbac-deployment",
+      "resourceGroup": "[parameters('aiFoundryResourceGroup')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "aiFoundryAccountName": {
+            "value": "[parameters('aiFoundryAccountName')]"
+          },
+          "functionAppPrincipalId": {
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, format('rg-{0}-{1}-backend', parameters('baseName'), parameters('env'))), 'Microsoft.Resources/deployments', 'backend-deployment'), '2025-04-01').outputs.functionAppPrincipalId.value]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.40.2.10011",
+              "templateHash": "678005886919785278"
+            }
+          },
+          "parameters": {
+            "aiFoundryAccountName": {
+              "type": "string",
+              "metadata": {
+                "description": "Azure AI Foundry account name"
+              }
+            },
+            "functionAppPrincipalId": {
+              "type": "string",
+              "metadata": {
+                "description": "Function App managed identity principal ID"
+              }
+            }
+          },
+          "variables": {
+            "cognitiveServicesUserRoleDefinitionId": "a97b65f3-24c7-4388-baec-2e87135dc908"
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Authorization/roleAssignments",
+              "apiVersion": "2022-04-01",
+              "scope": "[resourceId('Microsoft.CognitiveServices/accounts', parameters('aiFoundryAccountName'))]",
+              "name": "[guid(resourceId('Microsoft.CognitiveServices/accounts', parameters('aiFoundryAccountName')), parameters('functionAppPrincipalId'), variables('cognitiveServicesUserRoleDefinitionId'))]",
+              "properties": {
+                "principalId": "[parameters('functionAppPrincipalId')]",
+                "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('cognitiveServicesUserRoleDefinitionId'))]",
+                "principalType": "ServicePrincipal",
+                "description": "Allow Function App to call Azure AI Foundry APIs"
+              }
+            }
+          ],
+          "outputs": {
+            "roleAssignmentId": {
+              "type": "string",
+              "metadata": {
+                "description": "Role assignment resource ID"
+              },
+              "value": "[extensionResourceId(resourceId('Microsoft.CognitiveServices/accounts', parameters('aiFoundryAccountName')), 'Microsoft.Authorization/roleAssignments', guid(resourceId('Microsoft.CognitiveServices/accounts', parameters('aiFoundryAccountName')), parameters('functionAppPrincipalId'), variables('cognitiveServicesUserRoleDefinitionId')))]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, format('rg-{0}-{1}-backend', parameters('baseName'), parameters('env'))), 'Microsoft.Resources/deployments', 'backend-deployment')]"
+      ]
     }
   ],
   "outputs": {
@@ -27851,6 +28207,20 @@
         "description": "Backend Application Insights connection string"
       },
       "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, format('rg-{0}-{1}-backend', parameters('baseName'), parameters('env'))), 'Microsoft.Resources/deployments', 'backend-deployment'), '2025-04-01').outputs.appInsightsConnectionString.value]"
+    },
+    "keyVaultName": {
+      "type": "string",
+      "metadata": {
+        "description": "Key Vault name"
+      },
+      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, format('rg-{0}-{1}-frontend', parameters('baseName'), parameters('env'))), 'Microsoft.Resources/deployments', 'frontend-deployment'), '2025-04-01').outputs.keyVaultName.value]"
+    },
+    "keyVaultUri": {
+      "type": "string",
+      "metadata": {
+        "description": "Key Vault URI"
+      },
+      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, format('rg-{0}-{1}-frontend', parameters('baseName'), parameters('env'))), 'Microsoft.Resources/deployments', 'frontend-deployment'), '2025-04-01').outputs.keyVaultUri.value]"
     }
   }
 }

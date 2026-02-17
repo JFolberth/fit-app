@@ -1,15 +1,27 @@
 import json
+import base64
 from datetime import date
 import azure.functions as func
 
 import activities
+
+TEST_USER_ID = "test-user-crud-123"
+
+def _auth_header():
+    principal = {
+        "identityProvider": "aad",
+        "userId": TEST_USER_ID,
+        "userDetails": "testuser@example.com",
+        "userRoles": ["authenticated", "anonymous"],
+    }
+    return base64.b64encode(json.dumps(principal).encode()).decode()
 
 
 def make_request(method: str, url: str, body: dict | None = None, params: dict | None = None, route_params: dict | None = None):
     req = func.HttpRequest(
         method=method,
         url=url,
-        headers={},
+        headers={"X-MS-CLIENT-PRINCIPAL": _auth_header()},
         params=params or {},
         body=(json.dumps(body).encode("utf-8") if body is not None else None),
     )

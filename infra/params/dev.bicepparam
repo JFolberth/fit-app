@@ -17,6 +17,7 @@ param cosmosActivitiesContainerName = 'activities'
 
 // Static Web App
 param staticWebAppName = 'fitapp-dev-swa'
+param staticWebAppSku = 'Standard'
 
 // Functions and App Service Plan
 param appServicePlanName = 'fitapp-dev-plan'
@@ -30,6 +31,12 @@ param backendAppInsightsName = 'fitapp-dev-backend-appi'
 
 // High availability (false for dev)
 param zoneRedundant = false
+
+// Authentication
+param keyVaultName = 'fitapp-dev-kv'
+param aadClientId = '01935310-06f1-4bfd-b164-725fd598d4ce'
+param aadAppDisplayName = 'fitapp-dev'
+param aadClientSecret = readEnvironmentVariable('AAD_CLIENT_SECRET', '')
 
 // AI Coach configuration
 param aiFoundryEndpoint = 'https://fit-app-resource.services.ai.azure.com/api/projects/fit-app'

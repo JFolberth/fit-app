@@ -9,7 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../components/styles.css" />
   <script>
-    window.FITAPP_API_URL = "https://fitapp-dev-func.azurewebsites.net/api";
+    window.FITAPP_API_URL = "/api";
   </script>
 </head>
 <body>
@@ -28,6 +28,10 @@
       <div class="navbar-links">
         <a href="log-activity.html" class="nav-link active">Log Activity</a>
         <a href="history.html" class="nav-link">History</a>
+        <div class="user-menu">
+          <span id="user-name" class="user-name"></span>
+          <a href="/.auth/logout" class="nav-link nav-link-logout">Logout</a>
+        </div>
       </div>
     </div>
   </nav>
@@ -140,6 +144,9 @@
   <script type="module">
     import { createActivity } from '../services/api.js';
     import { Notification } from '../components/Notification.js';
+    import { loadUser } from '../services/auth.js';
+    
+    loadUser();
     const notices = new Notification(document.getElementById('notices'));
 
     // Set default date to today

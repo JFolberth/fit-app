@@ -1,12 +1,24 @@
 import json
+import base64
 from datetime import date
 import azure.functions as func
 
 import activities
 
+TEST_USER_ID = "test-user-list-int-123"
+
+def _auth_header():
+    principal = {
+        "identityProvider": "aad",
+        "userId": TEST_USER_ID,
+        "userDetails": "testuser@example.com",
+        "userRoles": ["authenticated", "anonymous"],
+    }
+    return base64.b64encode(json.dumps(principal).encode()).decode()
+
 
 def make_request(url: str, params: dict | None = None):
-    req = func.HttpRequest(method="GET", url=url, headers={}, params=params or {}, body=None)
+    req = func.HttpRequest(method="GET", url=url, headers={"X-MS-CLIENT-PRINCIPAL": _auth_header()}, params=params or {}, body=None)
     return req
 
 
@@ -32,7 +44,7 @@ def test_list_history_with_filter_and_order(monkeypatch):
 
     # Seed items via POST
     def post(payload):
-        req = func.HttpRequest(method="POST", url="/api/activities", headers={}, params={}, body=json.dumps(payload).encode("utf-8"))
+        req = func.HttpRequest(method="POST", url="/api/activities", headers={"X-MS-CLIENT-PRINCIPAL": _auth_header()}, params={}, body=json.dumps(payload).encode("utf-8"))
         return activities.main(req)
 
     post({"type": "Running", "duration": 30, "distance": 3.1, "avgBpm": 140, "date": date(2026, 1, 20).isoformat()})

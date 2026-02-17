@@ -163,7 +163,7 @@ module functionApp 'br/public:avm/res/web/site:0.19.4' = {
           'http://localhost:4280'
           'http://127.0.0.1:4280'
         ]
-        supportCredentials: false
+        supportCredentials: true
       }
       appSettings: [
         {

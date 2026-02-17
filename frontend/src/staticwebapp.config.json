@@ -1,0 +1,55 @@
+{
+  "auth": {
+    "identityProviders": {
+      "azureActiveDirectory": {
+        "registration": {
+          "openIdIssuer": "https://login.microsoftonline.com/3d665456-725f-48dc-af77-e54653f2cd3e/v2.0",
+          "clientIdSettingName": "AAD_CLIENT_ID",
+          "clientSecretSettingName": "AAD_CLIENT_SECRET"
+        }
+      }
+    }
+  },
+  "routes": [
+    {
+      "route": "/.auth/login/github",
+      "statusCode": 404
+    },
+    {
+      "route": "/.auth/login/twitter",
+      "statusCode": 404
+    },
+    {
+      "route": "/api/*",
+      "allowedRoles": ["authenticated"]
+    },
+    {
+      "route": "/pages/*",
+      "allowedRoles": ["authenticated"]
+    },
+    {
+      "route": "/index.html",
+      "allowedRoles": ["authenticated"]
+    },
+    {
+      "route": "/",
+      "allowedRoles": ["authenticated"]
+    }
+  ],
+  "responseOverrides": {
+    "401": {
+      "redirect": "/.auth/login/aad",
+      "statusCode": 302
+    }
+  },
+  "navigationFallback": {
+    "rewrite": "/index.html",
+    "exclude": ["/components/*", "/services/*", "/.auth/*"]
+  },
+  "globalHeaders": {
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+    "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://*.azurewebsites.net",
+    "Referrer-Policy": "strict-origin-when-cross-origin"
+  }
+}

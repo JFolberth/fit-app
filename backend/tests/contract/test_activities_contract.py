@@ -1,15 +1,28 @@
 import json
+import base64
 from datetime import date
 import azure.functions as func
 
 import activities
+
+TEST_USER_ID = "test-user-contract-123"
+
+def _auth_header():
+    """Create a Base64-encoded X-MS-CLIENT-PRINCIPAL header for testing."""
+    principal = {
+        "identityProvider": "aad",
+        "userId": TEST_USER_ID,
+        "userDetails": "testuser@example.com",
+        "userRoles": ["authenticated", "anonymous"],
+    }
+    return base64.b64encode(json.dumps(principal).encode()).decode()
 
 
 def make_request(method: str, url: str, body: dict | None = None, params: dict | None = None, route_params: dict | None = None):
     req = func.HttpRequest(
         method=method,
         url=url,
-        headers={},
+        headers={"X-MS-CLIENT-PRINCIPAL": _auth_header()},
         params=params or {},
         body=(json.dumps(body).encode("utf-8") if body is not None else None),
     )
@@ -58,7 +71,7 @@ def test_post_activity_created_contract(monkeypatch):
     assert res.status_code == 201
     data = json.loads(res.get_body())
     # Contract assertions
-    for field in ["id", "type", "duration", "date", "createdAt", "updatedAt"]:
+    for field in ["id", "type", "duration", "date", "createdAt", "updatedAt", "userId"]:
         assert field in data
 
 

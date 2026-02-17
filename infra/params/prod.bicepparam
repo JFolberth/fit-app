@@ -17,6 +17,7 @@ param cosmosActivitiesContainerName = 'activities'
 
 // Static Web App
 param staticWebAppName = 'fitapp-prod-swa'
+param staticWebAppSku = 'Standard'
 
 // Functions and App Service Plan
 param appServicePlanName = 'fitapp-prod-plan'
@@ -30,6 +31,12 @@ param backendAppInsightsName = 'fitapp-prod-backend-appi'
 
 // High availability (true for production)
 param zoneRedundant = true
+
+// Authentication
+param keyVaultName = 'fitapp-prod-kv'
+param aadClientId = '01935310-06f1-4bfd-b164-725fd598d4ce'
+param aadAppDisplayName = 'fitapp-prod'
+param aadClientSecret = readEnvironmentVariable('AAD_CLIENT_SECRET', '')
 
 // AI Coach configuration (update these for production AI resources)
 param aiFoundryEndpoint = 'https://fit-app-resource.services.ai.azure.com/api/projects/fit-app'

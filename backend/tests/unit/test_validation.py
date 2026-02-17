@@ -196,15 +196,17 @@ class TestActivityValidation:
         assert activity.comments is None
 
     def test_activity_model_with_id(self):
-        """Activity model includes id, createdAt, updatedAt."""
+        """Activity model includes id, userId, createdAt, updatedAt."""
         activity = Activity(
             id="test-123",
+            userId="user-456",
             type="Running",
             duration=1800,
             distance=5.0,
             avgBpm=150,
         )
         assert activity.id == "test-123"
+        assert activity.userId == "user-456"
         assert activity.createdAt is not None
         assert activity.updatedAt is not None
         assert activity.createdAt.endswith("Z")

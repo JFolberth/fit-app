@@ -11,6 +11,7 @@ from azure.cosmos import CosmosClient
 from shared.validation import validate_activity_payload, Activity
 from shared.cosmos_client import get_client, get_db_and_container
 from shared.logging import get_logger
+from shared.auth import get_user_identity
 
 logger = get_logger()
 
@@ -79,6 +80,12 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         method = req.method.upper()
         item_id = _extract_item_id(req)
 
+        # Extract authenticated user identity
+        user = get_user_identity(req)
+        if not user:
+            return _json_response(401, {"error": "Authentication required"})
+        user_id = user.user_id
+
         container = _get_container()
 
         if method == "GET":
@@ -94,15 +101,17 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
             # Build query conditionally - Cosmos DB SQL doesn't support IS NULL with params
             if type_filter:
-                query = "SELECT TOP @limit * FROM c WHERE c.type = @type ORDER BY c.date DESC"
+                query = "SELECT TOP @limit * FROM c WHERE c.userId = @userId AND c.type = @type ORDER BY c.date DESC"
                 params = [
                     {"name": "@limit", "value": limit_val},
+                    {"name": "@userId", "value": user_id},
                     {"name": "@type", "value": type_filter},
                 ]
             else:
-                query = "SELECT TOP @limit * FROM c ORDER BY c.date DESC"
+                query = "SELECT TOP @limit * FROM c WHERE c.userId = @userId ORDER BY c.date DESC"
                 params = [
                     {"name": "@limit", "value": limit_val},
+                    {"name": "@userId", "value": user_id},
                 ]
             items = list(container.query_items(query=query, parameters=params, enable_cross_partition_query=True))
             return _json_response(200, items)
@@ -119,6 +128,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
             activity = Activity(
                 id=str(uuid.uuid4()),
+                userId=user_id,
                 **validated.model_dump(),
             )
             doc = activity.model_dump()
@@ -132,6 +142,8 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
             existing = _query_item_by_id(container, item_id)
             if not existing:
                 return _json_response(404, {"error": "Not found"})
+            if existing.get("userId") != user_id:
+                return _json_response(403, {"error": "Forbidden"})
             try:
                 payload = req.get_json()
             except ValueError:
@@ -141,6 +153,8 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
             cosmos_fields = {"_rid", "_self", "_etag", "_attachments", "_ts"}
             merged = {k: v for k, v in existing.items() if k not in cosmos_fields}
             merged.update(payload)
+            # Ensure userId cannot be overridden via payload
+            merged["userId"] = user_id
             logger.info(f"PUT merged data: {merged}")
             try:
                 # Reuse base validation via Activity model
@@ -165,6 +179,8 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
             existing = _query_item_by_id(container, item_id)
             if not existing:
                 return _json_response(404, {"error": "Not found"})
+            if existing.get("userId") != user_id:
+                return _json_response(403, {"error": "Forbidden"})
             pk_val = existing.get(PARTITION_KEY_FIELD)
             container.delete_item(item=item_id, partition_key=pk_val)
             logger.info("Activity deleted", extra={"id": item_id})

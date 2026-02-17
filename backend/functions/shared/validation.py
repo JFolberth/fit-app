@@ -99,6 +99,7 @@ class ActivityCreate(ActivityBase):
 
 class Activity(ActivityBase):
     id: str
+    userId: str
     createdAt: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"))
     updatedAt: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"))
 
