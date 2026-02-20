@@ -27,3 +27,6 @@ resource roleAssignment 'Microsoft.DocumentDB/databaseAccounts/sqlRoleAssignment
 }
 
 output roleAssignmentId string = roleAssignment.id
+
+@description('Cosmos DB account endpoint')
+output cosmosEndpoint string = cosmosAccount.properties.documentEndpoint

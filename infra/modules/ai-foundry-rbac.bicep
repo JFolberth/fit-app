@@ -32,3 +32,6 @@ resource aiFoundryRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-0
 
 @description('Role assignment resource ID')
 output roleAssignmentId string = aiFoundryRoleAssignment.id
+
+@description('AI Foundry base endpoint')
+output aiFoundryBaseEndpoint string = aiFoundryAccount.properties.endpoint
