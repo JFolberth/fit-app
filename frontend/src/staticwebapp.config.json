@@ -44,7 +44,7 @@
   },
   "navigationFallback": {
     "rewrite": "/index.html",
-    "exclude": ["/components/*", "/services/*", "/.auth/*"]
+    "exclude": ["/components/*", "/services/*", "/.auth/*", "/api/*"]
   },
   "globalHeaders": {
     "X-Content-Type-Options": "nosniff",

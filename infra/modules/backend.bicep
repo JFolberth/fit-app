@@ -41,6 +41,9 @@ param aiFoundryModel string = 'gpt-5-mini'
 @description('MCP Server endpoint URL')
 param mcpServerEndpoint string = 'https://ca-fitapp-mcp-dev.nicemeadow-fd871464.eastus2.azurecontainerapps.io/mcp'
 
+@description('Static Web App hostname for CORS')
+param staticWebAppHostname string
+
 // ============================================================================
 // Storage Account (required for Azure Functions Flex Consumption)
 // Native resource for direct RBAC scope reference
@@ -159,7 +162,7 @@ module functionApp 'br/public:avm/res/web/site:0.19.4' = {
       minTlsVersion: '1.2'
       cors: {
         allowedOrigins: [
-          'https://*.azurestaticapps.net'
+          'https://${staticWebAppHostname}'
           'http://localhost:4280'
           'http://127.0.0.1:4280'
         ]
@@ -220,6 +223,52 @@ module functionApp 'br/public:avm/res/web/site:0.19.4' = {
       }
     ]
   }
+}
+
+// ============================================================================
+// Auth Settings: Configure for SWA linked backend
+// Platform auth must be enabled with AllowAnonymous so the azureStaticWebApps
+// provider can validate SWA tokens and populate X-MS-CLIENT-PRINCIPAL header.
+// Our Python code enforces auth by checking for the header.
+// Note: The SWA backend link auto-registers the azureStaticWebApps provider
+// with the correct clientId — we just need to ensure the right settings.
+// ============================================================================
+resource functionAppAuth 'Microsoft.Web/sites/config@2023-12-01' = {
+  name: '${functionAppName}/authsettingsV2'
+  properties: {
+    platform: {
+      enabled: true
+      runtimeVersion: '~1'
+    }
+    globalValidation: {
+      unauthenticatedClientAction: 'AllowAnonymous'
+    }
+    identityProviders: {
+      azureStaticWebApps: {
+        enabled: true
+      }
+      azureActiveDirectory: {
+        enabled: false
+      }
+    }
+    httpSettings: {
+      requireHttps: true
+      forwardProxy: {
+        convention: 'NoProxy'
+      }
+      routes: {
+        apiPrefix: '/.auth'
+      }
+    }
+    login: {
+      tokenStore: {
+        enabled: true
+      }
+    }
+  }
+  dependsOn: [
+    functionApp
+  ]
 }
 
 // ============================================================================

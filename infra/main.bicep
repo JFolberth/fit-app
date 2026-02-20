@@ -63,10 +63,6 @@ param aadClientId string
 @description('Azure AD app registration display name')
 param aadAppDisplayName string
 
-@secure()
-@description('Azure AD client secret for SWA authentication')
-param aadClientSecret string
-
 @description('Azure AI Foundry endpoint URL')
 param aiFoundryEndpoint string = 'https://fit-app-resource.services.ai.azure.com/api/projects/fit-app'
 
@@ -167,7 +163,6 @@ module frontend 'modules/frontend.bicep' = {
     keyVaultName: keyVaultName
     aadClientId: aadClientId
     aadAppDisplayName: aadAppDisplayName
-    aadClientSecret: aadClientSecret
   }
 }
 
@@ -191,6 +186,22 @@ module backend 'modules/backend.bicep' = {
     aiFoundryEndpoint: aiFoundryEndpoint
     aiFoundryModel: aiFoundryModel
     mcpServerEndpoint: mcpServerEndpoint
+    staticWebAppHostname: frontend.outputs.staticWebAppUrl
+  }
+}
+
+// ============================================================================
+// Link Functions Backend to Static Web App
+// ============================================================================
+// This enables SWA to proxy /api/* requests to the Functions app and forward
+// the X-MS-CLIENT-PRINCIPAL auth header for user identity
+module swaBackendLink 'modules/swa-backend-link.bicep' = {
+  name: 'swa-backend-link-deployment'
+  scope: frontendRg
+  params: {
+    staticWebAppName: staticWebAppName
+    functionAppResourceId: backend.outputs.functionAppId
+    backendRegion: location
   }
 }
 

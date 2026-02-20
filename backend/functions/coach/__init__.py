@@ -89,9 +89,9 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     fallback_reason = None
     
     try:
-        # Step 1: Fetch activities from MCP server
+        # Step 1: Fetch activities from MCP server (filtered by user)
         mcp_start = time.perf_counter()
-        activities, mcp_error = _fetch_activities(start_date, today, correlation_id)
+        activities, mcp_error = _fetch_activities(start_date, today, correlation_id, user_id=user.user_id)
         mcp_latency_ms = (time.perf_counter() - mcp_start) * 1000
         _track_metric("coach.mcp_latency_ms", mcp_latency_ms, {"correlation_id": correlation_id})
         
@@ -153,7 +153,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     return response
 
 
-def _fetch_activities(start_date: date, end_date: date, correlation_id: str) -> tuple:
+def _fetch_activities(start_date: date, end_date: date, correlation_id: str, user_id: str = None) -> tuple:
     """
     Fetch recent activities from MCP server.
     
@@ -162,7 +162,7 @@ def _fetch_activities(start_date: date, end_date: date, correlation_id: str) -> 
     """
     try:
         with get_mcp_client() as client:
-            activities = client.query_activities(start_date, end_date, limit=100)
+            activities = client.query_activities(start_date, end_date, limit=100, user_id=user_id)
             logger.info(
                 f"Fetched {len(activities)} activities from MCP",
                 extra={"correlation_id": correlation_id}

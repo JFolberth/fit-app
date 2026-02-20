@@ -31,10 +31,6 @@ param aadClientId string
 @description('Azure AD app registration display name')
 param aadAppDisplayName string
 
-@secure()
-@description('Azure AD client secret for SWA authentication')
-param aadClientSecret string
-
 // ============================================================================
 // Application Insights for Frontend (using AVM)
 // ============================================================================
@@ -67,7 +63,7 @@ module staticWebApp 'br/public:avm/res/web/static-site:0.9.3' = {
 }
 
 // ============================================================================
-// Key Vault (stores AAD client secret for secure management)
+// Key Vault (stores AAD client secret - secret value managed out-of-band via CLI)
 // ============================================================================
 resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
   name: keyVaultName
@@ -85,14 +81,6 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
     enabledForDeployment: false
     enabledForDiskEncryption: false
     enabledForTemplateDeployment: false
-  }
-}
-
-resource aadClientSecretKv 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
-  parent: keyVault
-  name: 'AAD-CLIENT-SECRET'
-  properties: {
-    value: aadClientSecret
   }
 }
 
@@ -122,7 +110,7 @@ resource swaAppSettings 'Microsoft.Web/staticSites/config@2024-04-01' = {
   name: 'appsettings'
   properties: {
     AAD_CLIENT_ID: aadClientId
-    AAD_CLIENT_SECRET: '@Microsoft.KeyVault(SecretUri=${aadClientSecretKv.properties.secretUri})'
+    AAD_CLIENT_SECRET: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=AAD-CLIENT-SECRET)'
   }
   dependsOn: [
     staticWebApp

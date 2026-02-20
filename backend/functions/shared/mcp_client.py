@@ -10,6 +10,7 @@ Uses Streamable HTTP (SSE) protocol to invoke MCP tools:
 import json
 import logging
 import os
+import re
 from datetime import date, timedelta
 from typing import Any, Dict, List, Optional
 
@@ -199,7 +200,15 @@ class MCPClient:
             if "error" in result:
                 raise MCPClientError(f"MCP tool error: {result['error']}")
             
-            return result.get("result", {})
+            # MCP tools/call returns {content: [{type: "text", text: "..."}], ...}
+            tool_result = result.get("result", {})
+            content = tool_result.get("content", [])
+            if content and isinstance(content, list):
+                text = content[0].get("text", "")
+                return text
+            
+            # Fallback: return raw result
+            return tool_result
             
         except httpx.TimeoutException:
             logger.warning(f"MCP tool {tool_name} timed out after {MCP_TIMEOUT_SECONDS}s")
@@ -211,11 +220,88 @@ class MCPClient:
             logger.error(f"MCP client error: {e}")
             raise MCPClientError(f"MCP client error: {e}")
     
+    @staticmethod
+    def _parse_documents_text(text: str) -> List[Dict[str, Any]]:
+        """
+        Parse MCP server's text-formatted document results into dicts.
+        
+        The MCP server returns results in this format:
+            Results:
+            --------------------------------------------------
+            
+            Document 1:
+              type: Running
+              duration: 60
+              distance: 5
+              ...
+            
+            Document 2:
+              ...
+        
+        Args:
+            text: Raw text response from MCP query_cosmos tool
+            
+        Returns:
+            List of parsed document dicts
+        """
+        documents = []
+        current_doc: Dict[str, Any] = {}
+        
+        for line in text.split('\n'):
+            # Skip header lines
+            if line.startswith('Results:') or line.startswith('---') or not line.strip():
+                if current_doc:
+                    # Blank line after a doc means it's complete
+                    pass
+                continue
+            
+            # New document starts
+            doc_match = re.match(r'^Document \d+:', line)
+            if doc_match:
+                if current_doc:
+                    documents.append(current_doc)
+                current_doc = {}
+                continue
+            
+            # Parse key: value lines (indented with 2 spaces)
+            kv_match = re.match(r'^\s+(\w[\w_]*): (.*)', line)
+            if kv_match:
+                key = kv_match.group(1)
+                value_str = kv_match.group(2).strip()
+                
+                # Skip Cosmos system fields
+                if key.startswith('_'):
+                    continue
+                
+                # Parse value types
+                if value_str == 'None' or value_str == '':
+                    value = None
+                elif value_str.lower() in ('true', 'false'):
+                    value = value_str.lower() == 'true'
+                else:
+                    try:
+                        # Try int first, then float
+                        if '.' in value_str:
+                            value = float(value_str)
+                        else:
+                            value = int(value_str)
+                    except ValueError:
+                        value = value_str
+                
+                current_doc[key] = value
+        
+        # Don't forget the last document
+        if current_doc:
+            documents.append(current_doc)
+        
+        return documents
+
     def query_activities(
         self,
         start_date: date,
         end_date: date,
-        limit: int = 100
+        limit: int = 100,
+        user_id: Optional[str] = None
     ) -> List[Dict[str, Any]]:
         """
         Query recent activities from Cosmos DB via MCP.
@@ -224,50 +310,92 @@ class MCPClient:
             start_date: Start of date range (inclusive)
             end_date: End of date range (inclusive)
             limit: Maximum number of activities to return
+            user_id: Filter activities to this user (required for per-user isolation)
             
         Returns:
             List of activity documents
         """
+        # Build query with user isolation filter
+        conditions = [
+            f"c.date >= '{start_date.isoformat()}'",
+            f"c.date <= '{end_date.isoformat()}'",
+        ]
+        if user_id:
+            conditions.append(f"c.userId = '{user_id}'")
+        where_clause = " AND ".join(conditions)
+        
         result = self._call_tool("query_cosmos", {
-            "query": f"SELECT * FROM c WHERE c.date >= '{start_date.isoformat()}' AND c.date <= '{end_date.isoformat()}' ORDER BY c.date DESC",
-            "limit": limit
+            "query": f"SELECT * FROM c WHERE {where_clause} ORDER BY c.date DESC",
         })
         
+        # MCP server returns formatted text, parse into document dicts
+        if isinstance(result, str):
+            return self._parse_documents_text(result)
         return result.get("documents", [])
     
-    def count_activities(self, start_date: date, end_date: date) -> int:
+    def count_activities(self, start_date: date, end_date: date, user_id: Optional[str] = None) -> int:
         """
         Count activities in a date range.
         
         Args:
             start_date: Start of date range (inclusive)
             end_date: End of date range (inclusive)
+            user_id: Filter to this user (required for per-user isolation)
             
         Returns:
             Number of activities
         """
-        result = self._call_tool("count_document", {
-            "query": f"SELECT VALUE COUNT(1) FROM c WHERE c.date >= '{start_date.isoformat()}' AND c.date <= '{end_date.isoformat()}'"
+        conditions = [
+            f"c.date >= '{start_date.isoformat()}'",
+            f"c.date <= '{end_date.isoformat()}'",
+        ]
+        if user_id:
+            conditions.append(f"c.userId = '{user_id}'")
+        where_clause = " AND ".join(conditions)
+        
+        result = self._call_tool("count_documents", {
+            "container_name": "activities"
         })
         
+        # MCP server returns text like "Total documents: 15"
+        if isinstance(result, str):
+            match = re.search(r'(\d+)', result)
+            return int(match.group(1)) if match else 0
         return result.get("count", 0)
     
-    def get_activity_types(self, start_date: date, end_date: date) -> List[str]:
+    def get_activity_types(self, start_date: date, end_date: date, user_id: Optional[str] = None) -> List[str]:
         """
         Get distinct activity types in a date range.
         
         Args:
             start_date: Start of date range (inclusive)
             end_date: End of date range (inclusive)
+            user_id: Filter to this user (required for per-user isolation)
             
         Returns:
             List of distinct activity type strings
         """
+        conditions = [
+            f"c.date >= '{start_date.isoformat()}'",
+            f"c.date <= '{end_date.isoformat()}'",
+        ]
+        if user_id:
+            conditions.append(f"c.userId = '{user_id}'")
+        where_clause = " AND ".join(conditions)
+        
         result = self._call_tool("list_distinct_values", {
-            "field": "type",
-            "query": f"c.date >= '{start_date.isoformat()}' AND c.date <= '{end_date.isoformat()}'"
+            "field_name": "type",
+            "container_name": "activities"
         })
         
+        # MCP server returns text like "Distinct values for 'type': Running, Rowing, Rucking"
+        if isinstance(result, str):
+            # Parse values from text response
+            match = re.search(r':\s*(.+)', result)
+            if match:
+                values = [v.strip() for v in match.group(1).split(',') if v.strip()]
+                return values
+            return []
         return result.get("values", [])
 
 

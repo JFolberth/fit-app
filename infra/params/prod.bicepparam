@@ -36,7 +36,6 @@ param zoneRedundant = true
 param keyVaultName = 'fitapp-prod-kv'
 param aadClientId = '01935310-06f1-4bfd-b164-725fd598d4ce'
 param aadAppDisplayName = 'fitapp-prod'
-param aadClientSecret = readEnvironmentVariable('AAD_CLIENT_SECRET', '')
 
 // AI Coach configuration (update these for production AI resources)
 param aiFoundryEndpoint = 'https://fit-app-resource.services.ai.azure.com/api/projects/fit-app'
