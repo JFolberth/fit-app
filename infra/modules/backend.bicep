@@ -39,7 +39,7 @@ param aiFoundryEndpoint string = 'https://fit-app-resource.services.ai.azure.com
 param aiFoundryModel string = 'gpt-5-mini'
 
 @description('MCP Server endpoint URL')
-param mcpServerEndpoint string = 'https://ca-fitapp-mcp-dev.nicemeadow-fd871464.eastus2.azurecontainerapps.io/mcp'
+param mcpServerEndpoint string = 'https://ca-fitapp-mcp-auth.braveground-fdce88f6.eastus2.azurecontainerapps.io/mcp'
 
 @description('Static Web App hostname for CORS')
 param staticWebAppHostname string

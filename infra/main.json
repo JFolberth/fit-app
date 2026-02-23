@@ -6506,7 +6506,7 @@
             },
             "mcpServerEndpoint": {
               "type": "string",
-              "defaultValue": "https://ca-fitapp-mcp-dev.nicemeadow-fd871464.eastus2.azurecontainerapps.io/mcp",
+              "defaultValue": "https://ca-fitapp-mcp-auth.braveground-fdce88f6.eastus2.azurecontainerapps.io/mcp",
               "metadata": {
                 "description": "MCP Server endpoint URL"
               }

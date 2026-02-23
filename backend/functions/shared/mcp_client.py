@@ -18,8 +18,8 @@ import httpx
 
 logger = logging.getLogger(__name__)
 
-# Default MCP server endpoint (dev environment)
-DEFAULT_MCP_ENDPOINT = "https://ca-fitapp-mcp-dev.nicemeadow-fd871464.eastus2.azurecontainerapps.io/mcp"
+# Default MCP server endpoint (auth environment)
+DEFAULT_MCP_ENDPOINT = "https://ca-fitapp-mcp-auth.braveground-fdce88f6.eastus2.azurecontainerapps.io/mcp"
 
 # Timeout for MCP calls (within 3s total budget)
 MCP_TIMEOUT_SECONDS = 2.0

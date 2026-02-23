@@ -28,7 +28,7 @@ AI_FOUNDRY_ENDPOINT = os.environ.get(
 AI_FOUNDRY_MODEL = os.environ.get("AI_FOUNDRY_MODEL", "gpt-5-mini")
 MCP_SERVER_ENDPOINT = os.environ.get(
     "MCP_SERVER_ENDPOINT",
-    "https://ca-fitapp-mcp-dev.nicemeadow-fd871464.eastus2.azurecontainerapps.io/mcp"
+    "https://ca-fitapp-mcp-auth.braveground-fdce88f6.eastus2.azurecontainerapps.io/mcp"
 )
 
 # Timeout budget (3 seconds total)
