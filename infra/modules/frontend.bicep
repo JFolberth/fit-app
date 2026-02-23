@@ -16,6 +16,9 @@ param appInsightsName string
 @description('Log Analytics Workspace resource ID for diagnostics')
 param logAnalyticsWorkspaceId string
 
+@description('SKU for Static Web App')
+param staticWebAppSku string = 'Standard'
+
 // ============================================================================
 // Application Insights for Frontend (using AVM)
 // ============================================================================
@@ -40,6 +43,7 @@ module staticWebApp 'br/public:avm/res/web/static-site:0.9.3' = {
     name: staticWebAppName
     location: location
     tags: tags
+    sku: staticWebAppSku
   }
 }
 

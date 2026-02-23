@@ -41,6 +41,9 @@ param aiFoundryModel string = 'gpt-5-mini'
 @description('MCP Server endpoint URL')
 param mcpServerEndpoint string = 'https://ca-fitapp-mcp-dev.nicemeadow-fd871464.eastus2.azurecontainerapps.io/mcp'
 
+@description('Static Web App hostname for CORS')
+param staticWebAppHostname string = ''
+
 // ============================================================================
 // Storage Account (required for Azure Functions Flex Consumption)
 // Native resource for direct RBAC scope reference
@@ -158,11 +161,10 @@ module functionApp 'br/public:avm/res/web/site:0.19.4' = {
       ftpsState: 'Disabled'
       minTlsVersion: '1.2'
       cors: {
-        allowedOrigins: [
-          'https://*.azurestaticapps.net'
+        allowedOrigins: union([
           'http://localhost:4280'
           'http://127.0.0.1:4280'
-        ]
+        ], !empty(staticWebAppHostname) ? ['https://${staticWebAppHostname}'] : [])
         supportCredentials: false
       }
       appSettings: [
